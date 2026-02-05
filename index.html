@@ -3,150 +3,410 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>73병동 감염차단 미션</title>
+  <title>73병동 PPE 교육용 게임</title>
   <style>
+    :root{
+      --bg1:#0b1020; --bg2:#101a3a;
+      --card:rgba(255,255,255,.08);
+      --line:rgba(255,255,255,.14);
+      --ink:#ffffff; --muted:rgba(255,255,255,.75);
+      --good:#22c55e; --bad:#ef4444;
+      --pri1:#a855f7; --pri2:#7c3aed;
+    }
+    *{box-sizing:border-box}
     body{
-      font-family: system-ui, -apple-system, "Noto Sans KR", sans-serif;
-      margin:0; background:#f6fbff;
-      display:flex; justify-content:center;
-      padding:18px;
+      margin:0; font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--ink); min-height:100vh;
+      display:flex; justify-content:center; padding:16px;
     }
-    .wrap{max-width:760px; width:100%;}
-    .card{
-      background:#fff; border-radius:16px; padding:16px;
-      box-shadow:0 6px 18px rgba(0,0,0,.08);
-      border:1px solid #e7eef7;
+    .app{width:min(520px,100%); border-radius:20px; overflow:hidden;
+      border:1px solid var(--line); box-shadow:0 18px 60px rgba(0,0,0,.45);
+      background:rgba(255,255,255,.04); backdrop-filter:blur(6px);
     }
-    h1{font-size:22px; margin:0 0 8px;}
-    .sub{color:#556; font-size:13px; margin-bottom:12px;}
-    .row{display:flex; gap:12px; flex-wrap:wrap;}
-    .col{flex:1; min-width:240px;}
-    label{display:block; font-size:12px; color:#667; margin:10px 0 6px;}
-    input, select{
-      width:100%; padding:10px 12px; border-radius:12px;
-      border:1px solid #dde; font-size:14px;
-      box-sizing:border-box;
+    header{display:flex;justify-content:space-between;align-items:center;
+      padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.10);
     }
+    header .t{font-weight:900; letter-spacing:-.02em}
+    header .s{font-size:12px; color:var(--muted)}
+    .screen{padding:16px}
+    .hide{display:none !important}
+
+    .startCard{
+      background: radial-gradient(1200px 400px at 50% 0%, rgba(168,85,247,0.35), rgba(255,255,255,0.04));
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:18px; padding:18px; text-align:center;
+    }
+    .logo{font-size:38px;font-weight:950;line-height:1.05;letter-spacing:-.06em;margin:6px 0 8px}
+    .sub{color:var(--muted);font-size:14px;margin:0 0 14px}
     .btn{
-      width:100%; padding:12px 14px; border-radius:14px;
-      border:0; font-weight:700; cursor:pointer;
-      background:#2d7ff9; color:#fff; margin-top:12px;
+      width:100%; border:none; border-radius:14px; padding:14px 14px;
+      font-weight:900; font-size:16px; cursor:pointer; color:#fff;
+      background:linear-gradient(180deg,var(--pri1),var(--pri2));
+      box-shadow:0 10px 24px rgba(124,58,237,.35);
     }
-    .btn2{
-      width:100%; padding:12px 14px; border-radius:14px;
-      border:1px solid #d6e6ff; font-weight:700; cursor:pointer;
-      background:#eef4ff; color:#1a3b7a; margin-top:10px;
+    .btn:active{transform:translateY(1px)}
+    .input{
+      width:100%; margin-top:10px; padding:12px 12px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.18);
+      color:#fff; font-size:14px;
     }
-    .score{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-      margin-top:12px;
+    .row{display:flex; gap:10px; margin-top:10px}
+    .row .input{flex:1}
+
+    .hud{display:flex;gap:10px;justify-content:space-between;margin-bottom:12px}
+    .chip{
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:999px; padding:8px 10px; font-size:12px; color:rgba(255,255,255,.92);
+      display:inline-flex; gap:6px; align-items:center;
     }
-    .pill{
-      display:inline-block; padding:6px 10px; border-radius:999px;
-      background:#eef7ff; border:1px solid #d6e6ff;
-      font-size:13px; color:#235;
+
+    .card{
+      background:#fff; color:#111827; border-radius:18px; padding:14px;
+      border:1px solid #e5e7eb;
     }
-    .imgBox{
-      margin-top:12px;
-      display:flex; justify-content:center; align-items:center;
-      background:#f2f8ff; border:1px dashed #cfe0ff;
-      border-radius:14px; padding:14px;
+    .qTitle{font-weight:950;font-size:18px;margin:2px 0 6px;letter-spacing:-.02em}
+    .qDesc{color:#6b7280;font-size:14px;margin:0 0 10px;line-height:1.45}
+    .scene{
+      background:linear-gradient(180deg,#e9f2ff,#f6f8ff);
+      border:1px solid #dbeafe; border-radius:16px;
+      height:230px; display:flex; align-items:center; justify-content:center;
+      position:relative; overflow:hidden;
     }
-    img{
-      width:100%; max-width:320px;
-      aspect-ratio:1/1; object-fit:contain;
-      border-radius:12px; background:#fff;
+    .tag{
+      position:absolute; top:12px; left:12px;
+      background:rgba(17,24,39,.82); color:#fff;
+      padding:6px 10px; font-size:12px; border-radius:999px;
     }
-    .hint{font-size:12px; color:#667; margin-top:8px;}
-    .footer{font-size:12px; color:#667; margin-top:12px; text-align:center;}
+    .charBox{
+      width:190px; height:190px; border-radius:18px;
+      background:#fff; border:1px solid #e5e7eb;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 10px 24px rgba(0,0,0,.08);
+      overflow:hidden;
+    }
+    .charBox img{width:100%;height:100%;object-fit:contain}
+    .charFallback{
+      width:140px;height:140px;border-radius:26px;background:#60a5fa;position:relative;
+    }
+    .charFallback:before{
+      content:""; position:absolute; left:26px; top:42px;
+      width:12px;height:12px;background:#111827;border-radius:3px;
+      box-shadow: 58px 0 0 #111827;
+    }
+    .charFallback:after{
+      content:""; position:absolute; left:34px; top:76px;
+      width:72px;height:12px;background:#111827;border-radius:999px;opacity:.85;
+    }
+
+    .choices{margin-top:12px; display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+    .pick{
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:16px; padding:12px 10px; color:#fff; font-weight:950;
+      cursor:pointer; display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center;
+      text-align:center; user-select:none;
+    }
+    .pick small{font-weight:800;color:rgba(255,255,255,.75)}
+    .pick.on{outline:2px solid rgba(168,85,247,.9); background:rgba(168,85,247,.18)}
+    .pick:active{transform:translateY(1px)}
+
+    .result{
+      margin-top:12px; padding:10px 12px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(0,0,0,.18); color:rgba(255,255,255,.95);
+      font-size:14px; display:none;
+    }
+    .result.ok{border-color:rgba(34,197,94,.45)}
+    .result.no{border-color:rgba(239,68,68,.45)}
+    .nextRow{margin-top:12px; display:flex; gap:10px}
+    .ghost{
+      flex:1; background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px; padding:12px; color:#fff; font-weight:950; cursor:pointer;
+    }
+    .primary{
+      flex:1; border:none; border-radius:14px; padding:12px;
+      font-weight:950; cursor:pointer; color:#fff;
+      background:linear-gradient(180deg,var(--pri1),var(--pri2));
+    }
+    .foot{margin-top:10px;font-size:12px;color:rgba(255,255,255,.72);text-align:center}
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="card" id="screenStart">
-      <h1>73병동 감염차단 미션</h1>
-      <div class="sub">설치 없이 바로 참여 · PPE를 올바르게 선택해 점수를 얻으세요</div>
+  <div class="app">
+    <header>
+      <div class="t">73병동 PPE 미션</div>
+      <div class="s">교육용 · 10문항</div>
+    </header>
 
-      <div class="row">
-        <div class="col">
-          <label for="nickname">닉네임(실명X 권장)</label>
-          <input id="nickname" placeholder="예: 73A-미희 / 73N-홍길동" />
+    <!-- START -->
+    <section class="screen" id="start">
+      <div class="startCard">
+        <div class="logo">PPE 선택<br/>미션</div>
+        <p class="sub">상황을 읽고 PPE를 선택하세요 (정답 +10 / 오답 -5)</p>
 
-          <label for="shift">근무</label>
-          <select id="shift">
+        <input class="input" id="nick" placeholder="닉네임(실명X) 예: 73D-홍길동" />
+        <div class="row">
+          <select class="input" id="shift">
             <option value="Day">Day</option>
             <option value="Evening">Evening</option>
             <option value="Night">Night</option>
           </select>
-
-          <button class="btn" id="btnStart">게임 시작</button>
-          <button class="btn2" id="btnReset">처음으로</button>
-
-          <div class="score">
-            <span class="pill">점수: <b id="score">0</b></span>
-            <span class="pill">상태: <b id="statusText">대기</b></span>
-          </div>
-
-          <div class="hint">
-            ✅ 이미지가 안 뜨면: 리포지토리 root(최상단)에 <b>img.png</b>가 있는지 확인하고, 파일명이 정확히 같은지(대소문자 포함) 확인하세요.
-          </div>
+          <select class="input" id="retry">
+            <option value="off">오답 재시도: 없음</option>
+            <option value="on">오답 재시도: 허용</option>
+          </select>
         </div>
 
-        <div class="col">
-          <div class="imgBox">
-            <img id="charImg" src="img.png" alt="캐릭터 이미지"
-                 onerror="this.alt='img.png 를 못 찾았어요 (파일명/위치 확인)';" />
+        <button class="btn" id="btnStart" style="margin-top:12px">START GAME</button>
+        <div class="foot">※ img.png가 있으면 캐릭터로 표시됩니다(없어도 게임 진행 가능)</div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section class="screen hide" id="game">
+      <div class="hud">
+        <div class="chip">스테이지 <b id="stageNow">1</b>/10</div>
+        <div class="chip">점수 <b id="scoreNow">0</b></div>
+      </div>
+
+      <div class="card">
+        <div class="qTitle" id="qTitle"></div>
+        <div class="qDesc" id="qDesc"></div>
+        <div class="scene">
+          <div class="tag" id="qTag"></div>
+
+          <div class="charBox">
+            <img id="charImg" src="img.png?v=1" alt="" style="display:none"
+                 onerror="this.style.display='none'; document.getElementById('charFallback').style.display='block';" />
+            <div id="charFallback" class="charFallback"></div>
           </div>
-          <div class="footer">© PPE 미션(간단 버전)</div>
         </div>
       </div>
-    </div>
+
+      <div class="choices" id="choices"></div>
+
+      <div class="result" id="resultBox"></div>
+
+      <div class="nextRow">
+        <button class="ghost" id="btnReset">처음으로</button>
+        <button class="primary" id="btnNext">다음</button>
+      </div>
+
+      <div class="foot" id="who"></div>
+    </section>
+
+    <!-- END -->
+    <section class="screen hide" id="end">
+      <div class="startCard">
+        <div class="logo">완료 🎉</div>
+        <p class="sub" id="endText"></p>
+        <button class="btn" id="btnRestart">다시하기</button>
+      </div>
+    </section>
   </div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
+<script>
+  // PPE 6개(교육용 표준 세트)
+  const PPE = [
+    {k:"장갑", sub:"체액/접촉"},
+    {k:"가운", sub:"오염/접촉"},
+    {k:"수술마스크", sub:"비말"},
+    {k:"N95", sub:"공기"},
+    {k:"보안경/페이스쉴드", sub:"튀김"},
+    {k:"PPE 불필요", sub:"손위생 중심"}
+  ];
 
-    const scoreEl = $("score");
-    const statusEl = $("statusText");
-    const imgEl = $("charImg");
+  // 73병동 교육용 10문항(기본 틀)
+  // 병원/부서 지침과 다를 수 있는 경우, 미희쌤 기준으로 문항/정답만 바꿔서 맞춰줄 수 있어.
+  const Q = [
+    { tag:"공기주의", title:"폐결핵 의심 환자 병실 입실",
+      desc:"기침/객담, 공기주의 의심. 가까운 거리에서 환자 평가.",
+      ans:["N95"], exp:"공기주의 의심 시 N95(동급) 착용이 기본입니다." },
 
-    let score = 0;
+    { tag:"접촉주의", title:"VRE 환자 드레싱",
+      desc:"접촉주의(환자/환경 접촉 가능).",
+      ans:["장갑","가운"], exp:"접촉주의는 장갑+가운이 기본입니다." },
 
-    function setStatus(text){
-      statusEl.textContent = text;
+    { tag:"비말주의", title:"인플루엔자 의심 환자 간호",
+      desc:"기침, 가래. 환자 가까이 접근.",
+      ans:["수술마스크"], exp:"비말주의는 수술마스크가 기본입니다(튀김 위험 시 아이보호 추가)." },
+
+    { tag:"표준주의", title:"혈액 채혈",
+      desc:"혈액 노출 가능. 튀김은 크지 않음.",
+      ans:["장갑"], exp:"혈액/체액 노출 가능 시 장갑은 기본입니다." },
+
+    { tag:"접촉주의", title:"CDI(설사) 환자 기저귀 교환",
+      desc:"분변 오염/환경 오염 위험 높음.",
+      ans:["장갑","가운"], exp:"접촉주의 상황(오염 위험)에서는 장갑+가운이 필요합니다." },
+
+    { tag:"에어로졸", title:"코로나 의심 환자 네불라이저 시행 보조",
+      desc:"에어로졸 발생 가능. 환자 가까이 수행.",
+      ans:["N95","장갑","가운","보안경/페이스쉴드"],
+      exp:"에어로졸 위험 시 N95 + 장갑/가운 + 눈보호를 고려합니다." },
+
+    { tag:"표준주의", title:"일반 환자 활력징후 측정",
+      desc:"체액 노출 없고 환자 접촉 최소.",
+      ans:["PPE 불필요"],
+      exp:"체액 노출이 없다면 PPE 없이 손위생 중심(기관 지침에 따름)입니다." },
+
+    { tag:"튀김 위험", title:"객혈/구토 환자 처치",
+      desc:"체액 튐 가능성이 높음.",
+      ans:["장갑","가운","수술마스크","보안경/페이스쉴드"],
+      exp:"튀김 위험이 높으면 마스크+눈보호+가운/장갑을 강화합니다." },
+
+    { tag:"접촉주의", title:"격리병실 환경 청소(침상 주변 정리)",
+      desc:"오염된 환경 접촉 가능.",
+      ans:["장갑","가운"], exp:"오염 환경 접촉 시 장갑+가운이 필요합니다." },
+
+    { tag:"공기주의", title:"수두/홍역 의심 환자 접촉",
+      desc:"공기 전파 가능 질환 의심. 병실 출입.",
+      ans:["N95"], exp:"홍역/수두 등 공기주의 질환은 N95(동급) 착용이 기본입니다." },
+  ];
+
+  const $ = (id)=>document.getElementById(id);
+
+  let idx=0, score=0, nick="", shift="", retryMode="off";
+  let picked=new Set();
+  let answered=false;
+  let startedAt=0;
+
+  function show(id){ $(id).classList.remove("hide"); }
+  function hide(id){ $(id).classList.add("hide"); }
+
+  function setChar(){
+    // 캐시 방지
+    const img = $("charImg");
+    img.style.display = "block";
+    $("charFallback").style.display = "none";
+    img.src = "img.png?v=" + Date.now();
+  }
+
+  function render(){
+    const q = Q[idx];
+    $("stageNow").textContent = String(idx+1);
+    $("scoreNow").textContent = String(score);
+    $("qTitle").textContent = q.title;
+    $("qDesc").textContent = q.desc;
+    $("qTag").textContent = q.tag;
+
+    setChar();
+
+    // 선택지
+    const box = $("choices");
+    box.innerHTML = "";
+    picked = new Set();
+    answered=false;
+
+    PPE.forEach(p=>{
+      const b = document.createElement("div");
+      b.className = "pick";
+      b.innerHTML = `<div>${p.k}</div><small>${p.sub}</small>`;
+      b.onclick = ()=>{
+        if(answered) return;
+        // 다중선택 가능(필요한 만큼 선택)
+        if(picked.has(p.k)){
+          picked.delete(p.k);
+          b.classList.remove("on");
+        }else{
+          picked.add(p.k);
+          b.classList.add("on");
+        }
+      };
+      box.appendChild(b);
+    });
+
+    const r = $("resultBox");
+    r.style.display="none";
+    r.className="result";
+    r.textContent="";
+  }
+
+  function sameSet(set, arr){
+    if(set.size !== arr.length) return false;
+    for(const x of arr) if(!set.has(x)) return false;
+    return true;
+  }
+
+  function grade(){
+    const q = Q[idx];
+    const ok = sameSet(picked, q.ans);
+    answered = true;
+
+    if(ok) score += 10;
+    else score = Math.max(0, score - 5);
+
+    $("scoreNow").textContent = String(score);
+
+    const r = $("resultBox");
+    r.style.display="block";
+    if(ok){
+      r.className = "result ok";
+      r.textContent = `정답 ✅  +10점  |  ${q.exp}`;
+    }else{
+      r.className = "result no";
+      r.textContent = `오답 ❌  -5점  |  ${q.exp}`;
     }
 
-    function setImage(){
-      // 한 장만 쓰는 버전: 항상 img.png
-      imgEl.src = "img.png?v=" + Date.now(); // 캐시 방지
-    }
+    return ok;
+  }
 
-    $("btnStart").addEventListener("click", () => {
-      const nick = $("nickname").value.trim();
-      if(!nick){
-        alert("닉네임을 입력해줘!");
-        $("nickname").focus();
+  function next(){
+    idx++;
+    if(idx >= Q.length){
+      const sec = Math.round((Date.now()-startedAt)/1000);
+      hide("game");
+      show("end");
+      $("endText").textContent = `${nick} (${shift}) · 최종 ${score}점 · 소요 ${sec}초`;
+      return;
+    }
+    render();
+  }
+
+  $("btnStart").onclick = ()=>{
+    nick = $("nick").value.trim();
+    if(!nick){ alert("닉네임을 입력해줘!"); $("nick").focus(); return; }
+    shift = $("shift").value;
+    retryMode = $("retry").value;
+
+    hide("start"); hide("end");
+    show("game");
+
+    idx=0; score=0; startedAt=Date.now();
+    $("who").textContent = `${nick} · ${shift} · 73병동`;
+    render();
+  };
+
+  $("btnNext").onclick = ()=>{
+    if(!answered){
+      const ok = grade();
+      if(!ok && retryMode === "on"){
+        // 오답이어도 재시도 허용: answered를 다시 false로 만들어 선택 유지 가능하게
+        answered = false;
+        // 피드백은 보여주되, 재선택 가능하게 함
         return;
       }
-      score += 10;
-      scoreEl.textContent = String(score);
-      setStatus("진행중");
-      setImage();
-      alert(`시작! (${nick}, ${$("shift").value})\n+10점`);
-    });
+      // 재시도 없음 or 정답이면 다음
+      next();
+      return;
+    }
+    // 이미 채점된 상태면 바로 다음
+    next();
+  };
 
-    $("btnReset").addEventListener("click", () => {
-      score = 0;
-      scoreEl.textContent = "0";
-      setStatus("대기");
-      $("nickname").value = "";
-      $("shift").value = "Day";
-      setImage();
-    });
+  $("btnReset").onclick = ()=>{ location.reload(); };
+  $("btnRestart").onclick = ()=>{ location.reload(); };
 
-    // 첫 로드 때도 캐시 방지
-    setImage();
-  </script>
+  // 시작화면에서도 img.png 있으면 미리 테스트(없어도 괜찮음)
+  window.addEventListener("load", ()=>{
+    const t = new Image();
+    t.onload = ()=>{};
+    t.onerror = ()=>{};
+    t.src = "img.png?v=" + Date.now();
+  });
+</script>
 </body>
 </html>
