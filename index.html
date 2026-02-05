@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>73병동 감염차단 미션</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Noto Sans KR", sans-serif; margin:0; background:#f6fbff; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 18px; }
+    .card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 6px 18px rgba(0,0,0,.08); }
+    h1 { font-size:22px; margin:0 0 8px; }
+    .sub { color:#556; font-size:13px; margin-bottom:12px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .col { flex:1; min-width: 260px; }
+    input, select { width:100%; padding:10px 12px; border-radius:12px; border:1px solid #dde; }
+    button { width:100%; padding:12px 14px; border-radius:14px; border:0; font-weight:700; cursor:pointer; }
+    .btn { background:#2d7ff9; color:#fff; }
+    .btn2 { background:#eef4ff; color:#1a3b7a; border:1px solid #d6e6ff; }
+    .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; }
+    .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#eef7ff; color:#235; font-size:12px; }
+    .q { font-size:18px; font-weight:800; margin:8px 0; }
+    .desc { color:#556; font-size:14px; line-height:1.4; }
+    .char { width:100%; max-width:220px; aspect-ratio:1/1; object-fit:contain; background:#f2f8ff; border-radius:18px; }
+    .footer { margin-top:10px; font-size:12px; color:#667; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="screenStart">
+      <h1>73병동 감염차단 미션</h1>
+      <div class="sub">설치 없이 바로 참여 · PPE를 올바르게 선택해 점수를 얻으세요</div>
+      <div class="row">
+        <div class="col">
+          <label class="pill">닉네임(실명X 권장)</label>
+          <input id="nickname" placeholder="예: 73A-미희 / 73N-홍길동" />
+          <div style="height:10px"></div>
+          <label class="pill">근무</label>
+          <select id="shift">
+            <option value="Day">Day</option>
+            <option value="Evening">Evening</option>
+            <option value="Night">Night</option>
+          </select>
+          <div style="height:12px"></div>
+          <button class="btn" id="btnStart">게임 시작</button>
+          <div class="footer">※ 저장 항목: 병동(73), 닉네임, 근무, 점수, 소요시간, 일시</div>
+        </div>
+        <div class="col" style="display:flex; align-items:center; justify-content:center;">
+          <img id="charImg" class="char" src="char_idle.png" alt="캐릭터" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="screenGame">
+      <div class="row">
+        <div class="col">
+          <span class="pill" id="status"></span>
+          <div class="q" id="qTitle"></div>
+          <div class="desc" id="qDesc"></div>
+          <div style="height:12px"></div>
+          <div class="grid" id="choices"></div>
+          <div style="height:10px"></div>
+          <button class="btn2 hidden" id="btnNext">다음</button>
+          <div class="footer" id="feedback"></div>
+        </div>
+        <div class="col" style="display:flex; align-items:center; justify-content:center;">
+          <img id="charImg2" class="char" src="char_idle.png" alt="캐릭터" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="screenEnd">
+      <h1>완료 🎉</h1>
+      <div class="sub" id="resultText"></div>
+      <button class="btn" id="btnRestart">다시하기</button>
+      <div class="footer">데이터는 Firebase에 저장됩니다.</div>
+    </div>
+  </div>
+
+  <!-- Firebase (Realtime Database) -->
+  <script type="module">
+    // 1) 아래 Firebase config를 콘솔에서 복사해 넣으세요.
+    // Firebase Realtime Database 웹 시작 문서 참고. :contentReference[oaicite:6]{index=6}
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // 2) 문항(73병동 간호사 PPE 선택) — 필요하면 여기만 수정하면 됨
+    const PPE = {
+      GLOVES: "장갑",
+      GOWN: "가운",
+      SM: "수술마스크",
+      N95: "N95",
+      EYE: "보안경/페이스쉴드"
+    };
+
+    const questions = [
+      { title:"폐결핵 의심 환자 병실 입실", desc:"기침/객담, 음압 격리 고려", correct:[PPE.N95], explain:"공기주의 의심 시 N95(또는 동급) 착용" },
+      { title:"VRE 환자 드레싱", desc:"접촉주의", correct:[PPE.GLOVES, PPE.GOWN], explain:"접촉주의: 장갑+가운" },
+      { title:"인플루엔자 의심 환자 흡인(suction)", desc:"비말 노출 가능", correct:[PPE.SM, PPE.GLOVES, PPE.GOWN, PPE.EYE], explain:"비말/비말 튀김: 마스크+아이보호 고려" },
+      { title:"혈액 채혈", desc:"표준주의", correct:[PPE.GLOVES], explain:"체액 노출 가능: 장갑" },
+      { title:"MRSA 환자 체위변경", desc:"접촉주의", correct:[PPE.GLOVES, PPE.GOWN], explain:"접촉주의: 장갑+가운" },
+      { title:"CDI 환자 기저귀 교환", desc:"접촉주의 + 환경오염 가능", correct:[PPE.GLOVES, PPE.GOWN], explain:"접촉주의: 장갑+가운 (손위생은 비누+물 강조)" },
+      { title:"중심정맥관 드레싱", desc:"무균 술기 중 비말 가능", correct:[PPE.GLOVES, PPE.SM], explain:"무균 술기: 장갑 + 마스크 권장(기관 지침에 맞춰 조정)" },
+      { title:"코로나 의심 환자 네불라이저", desc:"에어로졸 발생", correct:[PPE.N95, PPE.GLOVES, PPE.GOWN, PPE.EYE], explain:"에어로졸: N95 + 아이보호 + 가운/장갑" },
+      { title:"일반 환자 활력징후 측정", desc:"체액 노출 없음", correct:[], explain:"PPE 없이 손위생 중심(필요 시 상황 따라 장갑)" },
+      { title:"혈액 대량 오염 정리", desc:"튀김/노출 위험", correct:[PPE.GLOVES, PPE.GOWN, PPE.SM, PPE.EYE], explain:"튀김 가능: 장갑+가운+마스크+아이보호" }
+    ];
+
+    // --- UI 로직 ---
+    const $ = (id) => document.getElementById(id);
+    const screenStart = $("screenStart"), screenGame = $("screenGame"), screenEnd = $("screenEnd");
+    const btnStart = $("btnStart"), btnNext = $("btnNext"), btnRestart = $("btnRestart");
+    const qTitle = $("qTitle"), qDesc = $("qDesc"), choices = $("choices"), feedback = $("feedback"), status = $("status");
+    const charImg = $("charImg"), charImg2 = $("charImg2");
+
+    let idx = 0, score = 0, startAt = 0;
+    let user = { nickname:"", shift:"", ward:"73병동" };
+    let currentPick = new Set();
+
+    const allChoices = [PPE.GLOVES, PPE.GOWN, PPE.SM, PPE.N95, PPE.EYE];
+
+    function show(screen){
+      [screenStart, screenGame, screenEnd].forEach(s => s.classList.add("hidden"));
+      screen.classList.remove("hidden");
+    }
+
+    function setChar(state){
+      // 파일명만 바꾸면 귀여운 “표정/상태” 연출 가능
+      // char_idle.png / char_good.png / char_bad.png / char_win.png
+      const map = {
+        idle:"char_idle.png",
+        good:"char_good.png",
+        bad:"char_bad.png",
+        win:"char_win.png"
+      };
+      charImg.src = map[state] || map.idle;
+      charImg2.src = map[state] || map.idle;
+    }
+
+    function renderQuestion(){
+      currentPick = new Set();
+      btnNext.classList.add("hidden");
+      feedback.textContent = "";
+      setChar("idle");
+
+      const q = questions[idx];
+      status.textContent = `문항 ${idx+1} / ${questions.length} · 현재 점수 ${score}`;
+      qTitle.textContent = q.title;
+      qDesc.textContent = q.desc;
+
+      choices.innerHTML = "";
+      allChoices.forEach(label => {
+        const b = document.createElement("button");
+        b.className = "btn2";
+        b.textContent = label;
+        b.onclick = () => {
+          if (currentPick.has(label)) {
+            currentPick.delete(label);
+            b.style.opacity = "1";
+            b.style.outline = "none";
+          } else {
+            currentPick.add(label);
+            b.style.opacity = "0.85";
+            b.style.outline = "2px solid #2d7ff9";
+          }
+        };
+        choices.appendChild(b);
+      });
+
+      // 제출 버튼(다음 버튼을 제출로 사용)
+      btnNext.textContent = "제출";
+      btnNext.classList.remove("hidden");
+      btnNext.onclick = grade;
+    }
+
+    function sameSet(a, bArr){
+      const b = new Set(bArr);
+      if (a.size !== b.size) return false;
+      for (const x of a) if (!b.has(x)) return false;
+      return true;
+    }
+
+    function grade(){
+      const q = questions[idx];
+      const ok = sameSet(currentPick, q.correct);
+      if (ok) { score += 10; setChar("good"); }
+      else { score = Math.max(0, score - 5); setChar("bad"); }
+
+      feedback.textContent = `${ok ? "정답 ✅" : "오답 ❌"}  · 해설: ${q.explain}`;
+
+      // 다음으로
+      btnNext.textContent = (idx === questions.length - 1) ? "결과 보기" : "다음";
+      btnNext.onclick = () => {
+        idx++;
+        if (idx >= questions.length) finish();
+        else renderQuestion();
+      };
+    }
+
+    async function finish(){
+      setChar("win");
+      const durationSec = Math.round((Date.now() - startAt) / 1000);
+      const payload = {
+        ward: user.ward,
+        nickname: user.nickname,
+        shift: user.shift,
+        score,
+        durationSec,
+        createdAt: new Date().toISOString()
+      };
+
+      // Firebase에 기록 저장 (push로 고유 키 생성)
+      // Realtime DB 읽기/쓰기 기본은 문서 참고. :contentReference[oaicite:7]{index=7}
+      const k = push(ref(db, "ppeGameResults")).key;
+      await set(ref(db, `ppeGameResults/${k}`), payload);
+
+      $("resultText").textContent = `점수: ${score}점 · 소요시간: ${durationSec}초 (기록 저장 완료)`;
+      show(screenEnd);
+    }
+
+    btnStart.onclick = () => {
+      const n = $("nickname").value.trim();
+      if (!n) { alert("닉네임을 입력해주세요(실명X 권장)"); return; }
+      user.nickname = n;
+      user.shift = $("shift").value;
+      idx = 0; score = 0; startAt = Date.now();
+      show(screenGame);
+      renderQuestion();
+    };
+
+    btnRestart.onclick = () => {
+      setChar("idle");
+      show(screenStart);
+    };
+  </script>
+</body>
+</html>
