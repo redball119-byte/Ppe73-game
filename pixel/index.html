@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PPE 선택 게임</title>
+  <style>
+    :root{
+      --bg1:#0b1020; --bg2:#101a33;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.10);
+      --text:#eaf0ff; --muted: rgba(234,240,255,.75);
+      --good:#22c55e; --bad:#ef4444; --pri:#7c3aed;
+      --stroke: rgba(255,255,255,.14);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--text);
+      font-family: system-ui,-apple-system,"Noto Sans KR",sans-serif;
+      background:
+        radial-gradient(900px 500px at 20% 10%, rgba(124,58,237,.35), transparent 60%),
+        radial-gradient(900px 500px at 80% 15%, rgba(34,197,94,.25), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      padding:18px;
+    }
+    .wrap{width:min(820px, 100%);}
+
+    .topbar{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:10px 12px; border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid var(--stroke);
+      font-weight:700;
+    }
+    .pill small{font-weight:600; color:var(--muted)}
+    .grid{
+      display:grid; gap:14px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 860px){
+      .grid{grid-template-columns: 1.2fr .8fr;}
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      padding:16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .title{
+      font-size:26px; font-weight:900; letter-spacing:-.5px;
+      margin:0 0 4px;
+    }
+    .desc{margin:0; color:var(--muted); font-weight:650}
+    .tag{
+      display:inline-flex; align-items:center; gap:8px;
+      margin-top:10px;
+    }
+    .badge{
+      padding:7px 10px; border-radius:999px;
+      background:rgba(255,255,255,.10);
+      border:1px solid var(--stroke);
+      font-weight:800; font-size:13px;
+    }
+
+    /* 캐릭터 프레임 */
+    .charFrame{
+      margin-top:14px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      padding:14px;
+      display:flex; align-items:center; justify-content:center;
+      min-height:260px;
+    }
+    .char{
+      width:min(360px, 100%);
+      aspect-ratio: 1 / 1;
+      border-radius:18px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+      position:relative;
+      overflow:hidden;
+    }
+    /* 한 장 이미지를 4등분(가로 4칸)해서 상태별로 보여줌 */
+    .char::before{
+      content:"";
+      position:absolute; inset:0;
+      background-image:url("char.png"); /* <-- 여기 파일명만 맞춰줘 */
+      background-repeat:no-repeat;
+      background-size: 400% 100%;
+      background-position: 0% 0%;
+      image-rendering: auto;
+      transform: scale(0.98);
+      transform-origin:center;
+    }
+    /* 상태별 위치: idle(0), correct(1), wrong(2), win(3) */
+    .char[data-state="idle"]::before{ background-position: 0% 0%; }
+    .char[data-state="correct"]::before{ background-position: 33.333% 0%; }
+    .char[data-state="wrong"]::before{ background-position: 66.666% 0%; }
+    .char[data-state="win"]::before{ background-position: 100% 0%; }
+
+    /* 버튼 영역 */
+    .choices{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.07);
+      color:var(--text);
+      border-radius:16px;
+      padding:14px 12px;
+      font-weight:900;
+      cursor:pointer;
+      text-align:center;
+      user-select:none;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+      min-height:64px;
+      display:flex; flex-direction:column; justify-content:center; gap:4px;
+    }
+    .btn:hover{ background:rgba(255,255,255,.10); }
+    .btn:active{ transform: scale(.985); }
+    .btn small{color:var(--muted); font-weight:800}
+    .btn.pri{ background:linear-gradient(180deg, rgba(124,58,237,.95), rgba(124,58,237,.70)); border-color: rgba(124,58,237,.55);}
+    .btn.ghost{ background:rgba(255,255,255,.05); }
+
+    .footer{
+      margin-top:14px;
+      display:flex; gap:10px; flex-wrap:wrap;
+      justify-content:space-between; align-items:center;
+    }
+    .msg{
+      min-height:26px;
+      font-weight:900;
+      display:flex; align-items:center; gap:8px;
+    }
+    .msg.ok{ color: #baf7c9; }
+    .msg.bad{ color: #ffd1d1; }
+    .hint{ color:var(--muted); font-weight:750; font-size:13px; }
+
+    /* 시작 화면 */
+    .overlay{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.55);
+      padding:18px;
+    }
+    .modal{
+      width:min(520px, 100%);
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.18);
+      padding:18px;
+      box-shadow: 0 20px 70px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+      text-align:center;
+    }
+    .modal h1{
+      margin:6px 0 4px; font-size:34px; font-weight:1000; letter-spacing:-1px;
+    }
+    .modal p{ margin:0 0 12px; color:var(--muted); font-weight:750; }
+    .row{ display:flex; gap:10px; margin-top:12px; }
+    input{
+      flex:1;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(0,0,0,.20);
+      color:var(--text);
+      font-weight:800;
+      outline:none;
+    }
+    input::placeholder{ color:rgba(234,240,255,.55); }
+    .modal .btn{ width:100%; }
+    .tiny{ margin-top:10px; font-size:12px; color:rgba(234,240,255,.6); font-weight:700; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="pill"><span id="stageTxt">문항 1 / 10</span> <small>·</small> <small>현재 점수</small> <span id="scoreTxt">0</span></div>
+      <div class="pill"><small>최고점수</small> <span id="bestTxt">0</span></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="title" id="qTitle">PPE 선택 게임</div>
+        <p class="desc" id="qDesc">시나리오를 읽고, 올바른 PPE 또는 격리유형을 고르세요.</p>
+
+        <div class="tag" id="tagWrap">
+          <span class="badge" id="qTypeBadge">혼합</span>
+          <span class="badge" id="qKeyBadge">PPE/격리</span>
+        </div>
+
+        <div class="charFrame">
+          <div class="char" id="char" data-state="idle" aria-label="캐릭터"></div>
+        </div>
+
+        <div class="choices" id="choices"></div>
+
+        <div class="footer">
+          <div class="msg" id="msg"></div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn ghost" id="btnReset" type="button">처음으로</button>
+            <button class="btn pri" id="btnNext" type="button">다음</button>
+          </div>
+        </div>
+
+        <div class="hint" id="hint">
+          팁: 이 게임은 “PPE 선택 + 격리유형”이 섞여 나옵니다. (삼성병원 스타일)
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title" style="font-size:18px; margin:0 0 8px;">내 기록</div>
+        <p class="desc" id="userTxt" style="margin-bottom:10px;">이름: -</p>
+
+        <div class="badge" style="display:block; text-align:left;">
+          ✅ 정답: <span id="okCnt">0</span><br/>
+          ❌ 오답: <span id="badCnt">0</span><br/>
+          🔁 연속정답: <span id="streakCnt">0</span>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="badge" style="display:block; text-align:left;">
+          저장: 이 브라우저에 자동 저장됩니다 (localStorage).
+        </div>
+
+        <div class="tiny">
+          (원하면 나중에 Firebase로 “누가/언제/몇점” 저장도 가능)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시작 모달 -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="badge" style="display:inline-block;">교육용 PPE & 격리유형 퀴즈</div>
+      <h1>START GAME</h1>
+      <p>시나리오를 보고 “PPE” 또는 “격리유형”을 선택하세요.</p>
+      <div class="row">
+        <input id="nameInput" placeholder="이름(선택)" maxlength="20" />
+      </div>
+      <div style="height:10px;"></div>
+      <button class="btn pri" id="btnStart" type="button">게임 시작</button>
+      <div class="tiny">캐릭터 이미지 파일명은 <b>char.png</b> (index.html과 같은 폴더)</div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 문제은행 (PPE + 격리유형 혼합) ======
+    // type: "PPE" 또는 "ISO"
+    const QUESTIONS = [
+      {
+        type:"ISO",
+        title:"폐결핵 의심 환자 병실 입실",
+        desc:"기침/객담, 공기 전파 의심. 우선 어떤 격리주의?",
+        key:"공기주의",
+        options:["표준주의","접촉주의","비말주의","공기주의"],
+        answer:"공기주의",
+        explain:"활동성 폐결핵 의심/확진은 공기주의(음압 격리 고려)입니다."
+      },
+      {
+        type:"PPE",
+        title:"폐결핵 의심 환자 병실 입실",
+        desc:"공기주의 의심 상황. 기본 호흡기 보호구는?",
+        key:"N95",
+        options:["수술마스크","N95","장갑","가운"],
+        answer:"N95",
+        explain:"공기주의(결핵/홍역/수두 등) 의심 시 N95(또는 동급) 착용이 원칙입니다."
+      },
+      {
+        type:"ISO",
+        title:"인플루엔자 의심 환자 진료",
+        desc:"기침/발열. 호흡기 증상. 어떤 격리주의?",
+        key:"비말주의",
+        options:["표준주의","비말주의","공기주의","접촉주의"],
+        answer:"비말주의",
+        explain:"인플루엔자 등은 비말주의가 기본이며 상황에 따라 추가 조치합니다."
+      },
+      {
+        type:"PPE",
+        title:"혈액이 튈 위험이 있는 처치",
+        desc:"체액/혈액 비산(튀김) 위험. 추가로 필요한 PPE는?",
+        key:"보안경/페이스쉴드",
+        options:["장갑","수술마스크","보안경/페이스쉴드","N95"],
+        answer:"보안경/페이스쉴드",
+        explain:"비산 위험이 있으면 눈/얼굴 보호(보안경/페이스쉴드)가 필요합니다."
+      },
+      {
+        type:"ISO",
+        title:"옴(Scabies) 의심 환자 돌봄",
+        desc:"피부 접촉으로 전파. 어떤 격리주의?",
+        key:"접촉주의",
+        options:["공기주의","비말주의","접촉주의","표준주의만"],
+        answer:"접촉주의",
+        explain:"옴은 접촉으로 전파되어 접촉주의가 중요합니다."
+      },
+      {
+        type:"PPE",
+        title:"VRE/CRE 등 다제내성균 접촉 관리",
+        desc:"환자/환경 접촉이 많음. 우선 필요한 PPE는?",
+        key:"장갑+가운(상황에 따라)",
+        options:["장갑","가운","장갑+가운","N95"],
+        answer:"장갑+가운",
+        explain:"접촉주의 상황에서는 장갑과 가운을 함께 사용하는 경우가 많습니다(기관 지침 준수)."
+      },
+      {
+        type:"ISO",
+        title:"수두(Varicella) 의심 환자",
+        desc:"공기 전파 + 접촉 전파. 격리주의는?",
+        key:"공기주의(+접촉)",
+        options:["비말주의","공기주의","접촉주의","표준주의"],
+        answer:"공기주의",
+        explain:"수두/파종성 대상포진은 공기주의(그리고 접촉주의 병행)를 고려합니다."
+      },
+      {
+        type:"PPE",
+        title:"격리실 출입 전 손위생",
+        desc:"PPE 여부와 상관없이 반드시 해야 하는 것은?",
+        key:"손위생",
+        options:["장갑 착용","손위생","수술마스크 착용","가운 착용"],
+        answer:"손위생",
+        explain:"손위생은 표준주의 핵심이며 모든 상황의 기본입니다."
+      },
+      {
+        type:"PPE",
+        title:"환자 활력징후 측정",
+        desc:"체액 노출 없고 접촉 최소. 필요한 조치는?",
+        key:"PPE 불필요(손위생 중심)",
+        options:["장갑","가운","N95","PPE 불필요"],
+        answer:"PPE 불필요",
+        explain:"노출 위험이 없으면 표준주의(손위생 중심)로 충분할 수 있습니다."
+      },
+      {
+        type:"ISO",
+        title:"구토/설사(노로바이러스 의심)",
+        desc:"환경 오염/접촉 전파 중요. 어떤 격리주의?",
+        key:"접촉주의",
+        options:["접촉주의","공기주의","비말주의","표준주의만"],
+        answer:"접촉주의",
+        explain:"노로 등은 접촉/환경 오염 관리가 핵심이라 접촉주의가 중요합니다."
+      },
+    ];
+
+    // ====== 상태 ======
+    const TOTAL = 10;
+    let order = [];
+    let idx = 0;
+    let score = 0;
+    let ok = 0;
+    let bad = 0;
+    let streak = 0;
+    let locked = false;
+
+    const $ = (id)=>document.getElementById(id);
+    const stageTxt = $("stageTxt");
+    const scoreTxt = $("scoreTxt");
+    const bestTxt  = $("bestTxt");
+    const okCnt = $("okCnt");
+    const badCnt = $("badCnt");
+    const streakCnt = $("streakCnt");
+    const qTitle = $("qTitle");
+    const qDesc = $("qDesc");
+    const qTypeBadge = $("qTypeBadge");
+    const qKeyBadge = $("qKeyBadge");
+    const choices = $("choices");
+    const msg = $("msg");
+    const charEl = $("char");
+    const btnNext = $("btnNext");
+    const btnReset = $("btnReset");
+    const overlay = $("overlay");
+    const btnStart = $("btnStart");
+    const nameInput = $("nameInput");
+    const userTxt = $("userTxt");
+
+    function shuffle(arr){
+      const a = [...arr];
+      for(let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]] = [a[j],a[i]];
+      }
+      return a;
+    }
+
+    function loadBest(){
+      const best = Number(localStorage.getItem("ppe_best")||"0");
+      bestTxt.textContent = best;
+      return best;
+    }
+    function saveBestIfNeeded(){
+      const best = loadBest();
+      if(score > best){
+        localStorage.setItem("ppe_best", String(score));
+        bestTxt.textContent = score;
+      }
+    }
+
+    function setChar(state){
+      charEl.setAttribute("data-state", state);
+    }
+
+    function setMsg(kind, text){
+      msg.className = "msg" + (kind ? (" " + kind) : "");
+      msg.textContent = text || "";
+    }
+
+    function renderMeta(){
+      stageTxt.textContent = `문항 ${idx+1} / ${TOTAL}`;
+      scoreTxt.textContent = score;
+      okCnt.textContent = ok;
+      badCnt.textContent = bad;
+      streakCnt.textContent = streak;
+      loadBest();
+    }
+
+    function currentQ(){
+      return QUESTIONS[order[idx]];
+    }
+
+    function renderQ(){
+      locked = false;
+      setChar("idle");
+      setMsg("", "");
+      btnNext.textContent = (idx === TOTAL-1) ? "결과" : "다음";
+
+      const q = currentQ();
+      qTitle.textContent = q.title;
+      qDesc.textContent = q.desc;
+
+      if(q.type === "PPE"){
+        qTypeBadge.textContent = "PPE";
+        qKeyBadge.textContent = "보호구 선택";
+      }else{
+        qTypeBadge.textContent = "격리유형";
+        qKeyBadge.textContent = "주의 선택";
+      }
+
+      // 옵션 섞기
+      const opts = shuffle(q.options);
+      choices.innerHTML = "";
+      opts.forEach(opt=>{
+        const b = document.createElement("button");
+        b.className = "btn";
+        b.type = "button";
+
+        // 버튼 아래 작은 힌트(삼성병원 스타일 느낌)
+        let sub = "";
+        if(q.type==="PPE"){
+          if(opt==="장갑") sub="체액/접촉";
+          if(opt==="가운") sub="오염/접촉";
+          if(opt==="수술마스크") sub="비말";
+          if(opt==="N95") sub="공기";
+          if(opt==="보안경/페이스쉴드") sub="튀김";
+          if(opt==="PPE 불필요") sub="손위생 중심";
+          if(opt==="손위생") sub="기본";
+        }else{
+          if(opt==="표준주의") sub="기본";
+          if(opt==="접촉주의") sub="접촉/환경";
+          if(opt==="비말주의") sub="침방울";
+          if(opt==="공기주의") sub="에어로졸";
+        }
+
+        b.innerHTML = `<div>${opt}</div>${sub?`<small>${sub}</small>`:""}`;
+        b.addEventListener("click", ()=>choose(opt));
+        choices.appendChild(b);
+      });
+
+      renderMeta();
+    }
+
+    function choose(opt){
+      if(locked) return;
+      locked = true;
+
+      const q = currentQ();
+      const isCorrect = (opt === q.answer);
+
+      if(isCorrect){
+        score += 10;
+        ok += 1;
+        streak += 1;
+        setChar("correct");
+        setMsg("ok", "정답 ✅  " + q.explain);
+      }else{
+        bad += 1;
+        streak = 0;
+        setChar("wrong");
+        setMsg("bad", `오답 ❌  정답: ${q.answer} · ${q.explain}`);
+      }
+
+      saveBestIfNeeded();
+      renderMeta();
+    }
+
+    function next(){
+      if(!locked){
+        setMsg("bad", "선택 후 다음을 눌러주세요.");
+        return;
+      }
+      if(idx === TOTAL-1){
+        // 결과
+        if(ok === TOTAL){
+          setChar("win");
+          setMsg("ok", `올클리어! 🎉 ${score}점`);
+        }else{
+          setChar("idle");
+          setMsg("", `끝! 점수: ${score}점 (정답 ${ok}/${TOTAL})`);
+        }
+        btnNext.textContent = "다시하기";
+        btnNext.onclick = restart;
+        return;
+      }
+      idx += 1;
+      renderQ();
+    }
+
+    function restart(){
+      btnNext.onclick = next;
+      startGame(true);
+    }
+
+    function startGame(keepName){
+      // 10문항 랜덤 뽑기
+      const pool = [...Array(QUESTIONS.length)].map((_,i)=>i);
+      order = shuffle(pool).slice(0, TOTAL);
+
+      idx = 0; score = 0; ok = 0; bad = 0; streak = 0; locked = false;
+
+      // 이름 저장(선택)
+      if(!keepName){
+        const nm = (nameInput.value||"").trim();
+        localStorage.setItem("ppe_name", nm);
+      }
+      const savedName = localStorage.getItem("ppe_name") || "";
+      userTxt.textContent = "이름: " + (savedName ? savedName : "-");
+
+      overlay.style.display = "none";
+      renderQ();
+    }
+
+    // 이벤트
+    btnNext.addEventListener("click", next);
+    btnReset.addEventListener("click", ()=>{
+      overlay.style.display = "flex";
+      setChar("idle");
+      setMsg("", "");
+    });
+    btnStart.addEventListener("click", ()=>startGame(false));
+
+    // 초기
+    (function init(){
+      loadBest();
+      const savedName = localStorage.getItem("ppe_name") || "";
+      if(savedName) nameInput.value = savedName;
+      userTxt.textContent = "이름: " + (savedName ? savedName : "-");
+    })();
+  </script>
+</body>
+</html>
