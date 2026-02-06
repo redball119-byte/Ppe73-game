@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>환경관리담당자 보호구 교육</title>
+
+  <style>
+    :root{
+      --bg1:#071022;
+      --bg2:#050a14;
+      --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.12);
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.75);
+      --shadow: 0 18px 40px rgba(0,0,0,.55);
+      --r: 22px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(130,160,255,.12), transparent 60%),
+                  radial-gradient(900px 520px at 80% 20%, rgba(90,180,255,.10), transparent 60%),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100dvh;
+      padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+      overflow-x:hidden;
+    }
+
+    .wrap{
+      max-width: 860px;
+      margin: 0 auto;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    /* 상단바: 한 줄로 낮게 */
+    .topbar{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .titleCard{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+      min-height: 64px;
+    }
+    .titleCard .t1{
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      line-height: 1.1;
+    }
+    .titleCard .t2{
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* 재시작 버튼 작게 */
+    .restartBtn{
+      width: 64px;
+      min-height: 64px;
+      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      font-size: 20px;
+      font-weight: 900;
+    }
+    .restartBtn:active{ transform: scale(.98); }
+
+    /* 상태줄(낮게) */
+    .stats{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 10px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      min-height: 52px;
+    }
+    .stat{
+      display:flex;
+      align-items:baseline;
+      gap: 8px;
+      white-space:nowrap;
+    }
+    .stat .label{ color: var(--muted); font-weight: 800; font-size: 13px; }
+    .stat .value{ font-weight: 950; font-size: 18px; letter-spacing:-0.2px; }
+    .pill{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      font-weight: 900;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* 문제 낙하 박스 */
+    .dropCard{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 12px;
+    }
+
+    .dropTitle{
+      font-weight: 950;
+      font-size: 16px;
+      letter-spacing:-0.2px;
+      margin-bottom: 10px;
+    }
+
+    .dropZone{
+      position: relative;
+      height: 220px;
+      border-radius: 18px;
+      border: 2px dashed rgba(255,255,255,.14);
+      background: rgba(0,0,0,.10);
+      overflow:hidden;
+    }
+
+    .falling{
+      position:absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -70px;
+      width: min(560px, calc(100% - 24px));
+      padding: 16px 18px;
+      border-radius: 999px;
+      text-align:center;
+      font-weight: 950;
+      font-size: 20px;
+      letter-spacing: -0.3px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: 0 10px 26px rgba(0,0,0,.45);
+      will-change: transform;
+    }
+
+    /* 보기(4개) */
+    .choicesCard{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 12px;
+    }
+    .choicesTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .choicesTop .h{
+      font-weight: 950;
+      font-size: 16px;
+    }
+    .choicesTop .sub{
+      font-weight: 900;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn{
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      box-shadow: 0 14px 28px rgba(0,0,0,.35);
+      padding: 18px 14px;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      align-items:center;
+      justify-content:center;
+      min-height: 86px;
+    }
+    .btn:active{ transform: scale(.99); }
+    .btn .b1{ font-weight: 950; font-size: 22px; letter-spacing:-0.4px; }
+    .btn .b2{ font-weight: 850; font-size: 12px; color: var(--muted); }
+
+    .hint{
+      text-align:center;
+      margin-top: 10px;
+      color: rgba(234,240,255,.70);
+      font-weight: 850;
+      font-size: 13px;
+    }
+
+    /* 결과 오버레이(정답/오답 이미지) */
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(3px);
+      z-index: 9999;
+    }
+    .overlay.hidden{ display:none; }
+    .overlayCard{
+      width: min(360px, 82vw);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 20px 60px rgba(0,0,0,.65);
+      padding: 14px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+    .overlayCard img{
+      width: 100%;
+      height: auto;
+      display:block;
+      border-radius: 16px;
+    }
+
+    /* 작은 화면에서 더 안 잘리게 */
+    @media (max-width: 420px){
+      .dropZone{ height: 200px; }
+      .falling{ font-size: 18px; }
+      .btn .b1{ font-size: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <div class="titleCard">
+        <div class="t1">환경관리담당자 보호구 교육</div>
+        <div class="t2">낙하 퀴즈</div>
+      </div>
+
+      <div class="restartBtn" id="restartBtn" title="재시작" aria-label="재시작">↻</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="label">문항</span>
+        <span class="value" id="qText">1/5</span>
+      </div>
+      <div class="stat">
+        <span class="label">점수</span>
+        <span class="value" id="scoreText">0</span>
+      </div>
+      <div class="pill" id="statePill">진행</div>
+      <div class="stat" style="margin-left:auto;">
+        <span class="label">제한시간</span>
+        <span class="value" id="timeText">5.0s</span>
+      </div>
+    </div>
+
+    <div class="dropCard">
+      <div class="dropTitle">문제가 아래로 내려옵니다. 5초 안에 정답 PPE 1개를 선택하세요.</div>
+
+      <div class="dropZone" id="dropZone">
+        <div class="falling" id="fallingText">준비중…</div>
+      </div>
+    </div>
+
+    <div class="choicesCard">
+      <div class="choicesTop">
+        <div class="h">보호구 선택 (4개)</div>
+        <div class="sub">한 문제당 1개만 선택</div>
+      </div>
+
+      <div class="grid">
+        <div class="btn" data-choice="mask">
+          <div class="b1">마스크</div>
+          <div class="b2">기본(비말/분무)</div>
+        </div>
+        <div class="btn" data-choice="n95">
+          <div class="b1">N95</div>
+          <div class="b2">공기(결핵 등)</div>
+        </div>
+        <div class="btn" data-choice="gown_gloves">
+          <div class="b1">가운+장갑</div>
+          <div class="b2">접촉(오염물 처리)</div>
+        </div>
+        <div class="btn" data-choice="none">
+          <div class="b1">보호구 불필요</div>
+          <div class="b2">위험 낮음(교육용)</div>
+        </div>
+      </div>
+
+      <div class="hint">선택하면 자동 채점 후 다음 문제로 넘어갑니다.</div>
+    </div>
+
+  </div>
+
+  <!-- 결과 오버레이 -->
+  <div id="resultOverlay" class="overlay hidden" aria-hidden="true">
+    <div class="overlayCard">
+      <img id="resultImg" alt="결과 이미지" src="assets/idle.png" />
+    </div>
+  </div>
+
+  <script>
+    // ====== 문제 5개 (정답 1개) ======
+    const questions = [
+      { text: "일반 복도 청소", answer: "none" },
+      { text: "인플루엔자 환자 구역 청소", answer: "mask" },
+      { text: "VRE/CRE 장기 재실 병실 퇴실 후 환경관리", answer: "gown_gloves" },
+      { text: "결핵(의심/확진) 환자 구역 청소", answer: "n95" },
+      { text: "혈액/체액 오염물 처리(스필)", answer: "gown_gloves" },
+    ];
+
+    // ====== 설정 ======
+    const LIMIT_MS = 5000;           // 5초
+    const RESULT_SHOW_MS = 750;      // 정오답 이미지 표시 시간
+    const DROP_FPS = 60;
+
+    // ====== DOM ======
+    const fallingText = document.getElementById("fallingText");
+    const dropZone = document.getElementById("dropZone");
+    const qText = document.getElementById("qText");
+    const scoreText = document.getElementById("scoreText");
+    const timeText = document.getElementById("timeText");
+    const statePill = document.getElementById("statePill");
+    const restartBtn = document.getElementById("restartBtn");
+
+    const overlay = document.getElementById("resultOverlay");
+    const resultImg = document.getElementById("resultImg");
+
+    // ====== 상태 ======
+    let idx = 0;
+    let score = 0;
+    let running = false;
+    let answered = false;
+
+    let startTs = 0;
+    let rafId = null;
+
+    // 낙하 위치
+    let y = -80; // 시작 위쪽
+    let maxY = 0;
+
+    function setOverlay(src){
+      resultImg.src = src;
+      overlay.classList.remove("hidden");
+      overlay.setAttribute("aria-hidden", "false");
+    }
+    function hideOverlay(){
+      overlay.classList.add("hidden");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+
+    function setState(text){
+      statePill.textContent = text;
+    }
+
+    function layoutDropBounds(){
+      // 낙하가 바닥(Zone 하단) 닿는 위치 계산
+      const zoneH = dropZone.clientHeight;
+      const pillH = fallingText.offsetHeight || 60;
+      // 약간 여백
+      maxY = zoneH - pillH - 14;
+      if (maxY < 0) maxY = 0;
+    }
+
+    function render(){
+      fallingText.style.transform = `translateX(-50%) translateY(${y}px)`;
+    }
+
+    function startQuestion(){
+      answered = false;
+      running = true;
+      setState("진행");
+
+      // 텍스트/카운터
+      fallingText.textContent = questions[idx].text;
+      qText.textContent = `${idx+1}/${questions.length}`;
+      scoreText.textContent = String(score);
+
+      // 위치 초기화
+      y = -80;
+      layoutDropBounds();
+      render();
+
+      startTs = performance.now();
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function tick(now){
+      if (!running) return;
+
+      const elapsed = now - startTs;
+      const remain = Math.max(0, LIMIT_MS - elapsed);
+      timeText.textContent = (remain/1000).toFixed(1) + "s";
+
+      // 낙하 속도: 남은 시간과 상관없이 일정하게 내려오되, 5초 후 바닥 닿게
+      // maxY까지 5초에 도달하도록 계산
+      const t = Math.min(1, elapsed / LIMIT_MS);
+      y = (-80) + (maxY + 80) * t;  // -80 -> maxY
+      render();
+
+      if (elapsed >= LIMIT_MS && !answered){
+        // 시간초과 = 오답 처리
+        answered = true;
+        running = false;
+        setState("오답");
+        setOverlay("assets/wrong.png");
+
+        setTimeout(()=>{
+          hideOverlay();
+          nextQuestion();
+        }, RESULT_SHOW_MS);
+        return;
+      }
+
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function nextQuestion(){
+      idx++;
+      if (idx >= questions.length){
+        // 끝
+        setState("완료");
+        timeText.textContent = "0.0s";
+        // 마지막엔 idle로
+        setOverlay("assets/idle.png");
+        setTimeout(()=> hideOverlay(), 650);
+        return;
+      }
+      startQuestion();
+    }
+
+    function grade(choice){
+      if (!running || answered) return;
+      answered = true;
+      running = false;
+
+      const correct = questions[idx].answer === choice;
+      if (correct){
+        score++;
+        setState("정답");
+        setOverlay("assets/correct.png");
+      }else{
+        setState("오답");
+        setOverlay("assets/wrong.png");
+      }
+      scoreText.textContent = String(score);
+
+      setTimeout(()=>{
+        hideOverlay();
+        nextQuestion();
+      }, RESULT_SHOW_MS);
+    }
+
+    // 버튼 이벤트
+    document.querySelectorAll(".btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const choice = btn.getAttribute("data-choice");
+        grade(choice);
+      });
+    });
+
+    // 재시작
+    function restart(){
+      cancelAnimationFrame(rafId);
+      hideOverlay();
+      idx = 0;
+      score = 0;
+      timeText.textContent = "5.0s";
+      startQuestion();
+    }
+    restartBtn.addEventListener("click", restart);
+
+    // 리사이즈 시 바닥 계산 다시
+    window.addEventListener("resize", ()=>{
+      layoutDropBounds();
+      render();
+    });
+
+    // 시작
+    restart();
+  </script>
+</body>
+</html>
