@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>환경관리 PPE 퀴즈</title>
+  <style>
+    :root{
+      --bg:#071022;
+      --card:rgba(255,255,255,.07);
+      --stroke:rgba(255,255,255,.10);
+      --text:#eaf0ff;
+      --muted:rgba(234,240,255,.72);
+      --good:#22c55e;
+      --bad:#ef4444;
+      --btn:#25314a;
+      --btn2:#1b2438;
+      --shadow:0 18px 40px rgba(0,0,0,.45);
+      --r:22px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:radial-gradient(1200px 700px at 50% -10%, rgba(90,140,255,.22), transparent 60%),
+                 radial-gradient(900px 600px at 10% 20%, rgba(34,197,94,.12), transparent 55%),
+                 var(--bg);
+      color:var(--text);
+      font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow:hidden; /* 한 화면 고정 */
+    }
+
+    .wrap{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding:12px;
+      max-width:520px;
+      margin:0 auto;
+    }
+
+    .top{
+      display:grid;
+      grid-template-columns: 1.2fr .9fr .9fr;
+      gap:10px;
+    }
+    .pill{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:18px;
+      padding:10px 12px;
+      box-shadow:var(--shadow);
+      text-align:left;
+      min-height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .pill b{font-size:14px}
+    .pill span{font-size:12px; color:var(--muted)}
+
+    .titleCard{
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:22px;
+      padding:14px 14px;
+      box-shadow:var(--shadow);
+      text-align:left;
+    }
+    .titleCard h1{
+      margin:0 0 6px 0;
+      font-size:18px;
+      letter-spacing:-.2px;
+    }
+    .titleCard .sub{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    /* 게임 영역 */
+    .arena{
+      flex:1;
+      position:relative;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      min-height:240px;
+    }
+
+    /* 떨어지는 질병 텍스트 */
+    #fall{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      top:-60px;
+      font-weight:800;
+      font-size:24px;
+      padding:10px 14px;
+      background:rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      letter-spacing:-.2px;
+      user-select:none;
+      white-space:nowrap;
+      pointer-events:none;
+    }
+
+    .hintCenter{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:rgba(234,240,255,.45);
+      font-weight:700;
+      font-size:16px;
+      padding:18px;
+      text-align:center;
+      user-select:none;
+    }
+
+    /* 하단 버튼 */
+    .bottom{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .btnRow{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    button{
+      border:none;
+      border-radius:18px;
+      padding:14px 12px;
+      background:var(--btn);
+      color:var(--text);
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:-.2px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    button:active{transform:scale(.99)}
+    .start{
+      background:linear-gradient(180deg, rgba(34,197,94,.95), rgba(22,163,74,.95));
+      color:#04120a;
+    }
+
+    /* 결과 모달 */
+    .modalBg{
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+    }
+    .modal{
+      width:min(420px, 100%);
+      background:rgba(12,18,34,.92);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:22px;
+      box-shadow:0 24px 70px rgba(0,0,0,.7);
+      padding:14px;
+      text-align:center;
+    }
+    .modal h2{
+      margin:6px 0 8px 0;
+      font-size:18px; /* 글씨 조금 작게 */
+      letter-spacing:-.3px;
+    }
+    .modal p{
+      margin:6px 0 12px 0;
+      font-size:12px; /* 글씨 작게 */
+      color:rgba(234,240,255,.78);
+      line-height:1.35;
+      word-break:keep-all;
+    }
+    .modal img{
+      width:120px;   /* ✅ 이미지 작게 */
+      height:120px;  /* ✅ 전체 몸이 보이도록 contain */
+      object-fit:contain;
+      display:block;
+      margin:6px auto 8px auto;
+      border-radius:16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .modal .nextBtn{
+      width:100%;
+      background:linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.95));
+    }
+
+    /* 작은 화면 최적화 */
+    @media (max-height: 720px){
+      .titleCard h1{font-size:17px}
+      button{padding:13px 10px}
+      #fall{font-size:22px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="pill"><b>🧹 환경관리 PPE 퀴즈</b><span>기본 3종</span></div>
+      <div class="pill"><b>문항</b><span id="qText">0 / 10</span></div>
+      <div class="pill"><b>점수</b><span id="scoreText">0</span></div>
+    </div>
+
+    <div class="titleCard">
+      <h1>질병/상황을 보고 필요한 PPE를 고르세요</h1>
+      <div class="sub">① 시작을 누르면 질병명이 위에서 천천히 내려옵니다. ② 아래 버튼에서 정답 PPE를 고르면 자동 채점됩니다.</div>
+    </div>
+
+    <div class="arena" id="arena">
+      <div class="hintCenter" id="hint">시작을 누르면 질병명이 내려옵니다</div>
+      <div id="fall">결핵</div>
+
+      <!-- 결과 모달 -->
+      <div class="modalBg" id="modalBg">
+        <div class="modal">
+          <img id="resultImg" alt="result" />
+          <h2 id="resultTitle">정답</h2>
+          <p id="resultDesc">설명</p>
+          <button class="nextBtn" id="nextBtn">다음</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <button class="start" id="startBtn">시작</button>
+      <div class="btnRow">
+        <button data-ppe="mask">마스크</button>
+        <button data-ppe="n95">N95 마스크</button>
+      </div>
+      <div class="btnRow">
+        <button data-ppe="gown_glove">가운+장갑</button>
+        <button data-ppe="none">PPE 불필요</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/** =========================
+ *  ✅ 문제(질병명) + 정답(PPE)
+ *  PPE 종류: mask / n95 / gown_glove / none
+ *  ========================= */
+const QUESTIONS = [
+  { name:"결핵",          answer:"n95",       explain:"공기주의 상황 → N95 마스크", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"수두",          answer:"n95",       explain:"공기+접촉(교육용 단순화) → 여기서는 N95로 통일", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"인플루엔자",    answer:"mask",      explain:"비말주의 상황 → 수술마스크", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"노로바이러스 설사(오물)", answer:"gown_glove", explain:"분변/오물 처리 접촉 위험 → 가운+장갑", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"혈액/체액 오염물 처리",  answer:"gown_glove", explain:"체액 접촉 위험 → 가운+장갑", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"격리병실 일반 청소",      answer:"mask",      explain:"기본 환경관리(분무X) → 마스크", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"MRSA 환자 병실 청소",     answer:"gown_glove", explain:"접촉주의(교육 단순화) → 가운+장갑", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"VRE 환자 병실 청소",      answer:"gown_glove", explain:"접촉주의(교육 단순화) → 가운+장갑", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"결핵 의심객실 청소",       answer:"n95",       explain:"공기주의 의심 → N95 마스크", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+  { name:"사무실 책상 닦기(오염 없음)", answer:"none",  explain:"오염·비말·체액 위험 없음 → PPE 불필요", imgOk:"assets/ok.png", imgNo:"assets/no.png" },
+];
+
+let idx = 0;
+let score = 0;
+let running = false;
+let timer = null;
+const TOTAL = QUESTIONS.length;
+
+const fall = document.getElementById("fall");
+const hint = document.getElementById("hint");
+const qText = document.getElementById("qText");
+const scoreText = document.getElementById("scoreText");
+const startBtn = document.getElementById("startBtn");
+const arena = document.getElementById("arena");
+
+const modalBg = document.getElementById("modalBg");
+const resultImg = document.getElementById("resultImg");
+const resultTitle = document.getElementById("resultTitle");
+const resultDesc = document.getElementById("resultDesc");
+const nextBtn = document.getElementById("nextBtn");
+
+function updateTop(){
+  qText.textContent = `${Math.min(idx, TOTAL)} / ${TOTAL}`;
+  scoreText.textContent = score;
+}
+
+function resetFall(){
+  fall.style.transition = "none";
+  fall.style.top = "-60px";
+  // force reflow
+  void fall.offsetWidth;
+}
+
+function startRound(){
+  if (running) return;
+  if (idx >= TOTAL) {
+    // 끝났으면 다시 시작
+    idx = 0; score = 0;
+    updateTop();
+  }
+
+  running = true;
+  hint.style.display = "none";
+  resetFall();
+
+  const q = QUESTIONS[idx];
+  fall.textContent = q.name;
+
+  // ✅ 느린 속도 (4.2초)
+  fall.style.transition = "top 4.2s linear";
+  // 떨어질 위치: arena 내부 하단 근처(버튼과 겹치지 않게)
+  const endTop = Math.max(140, arena.clientHeight - 120);
+  requestAnimationFrame(()=>{ fall.style.top = endTop + "px"; });
+
+  // 시간 내 선택 못하면 오답 처리
+  timer = setTimeout(()=>{
+    showResult(false, "시간 초과");
+  }, 4300);
+}
+
+function showResult(correct, extraMsg=""){
+  clearTimeout(timer);
+  running = false;
+
+  const q = QUESTIONS[idx];
+  const ok = correct;
+
+  // ✅ 이미지: assets 폴더에 ok.png / no.png 올려두면 됨
+  // (원하면 다른 파일명으로 바꿔도 됨)
+  resultImg.src = ok ? q.imgOk : q.imgNo;
+
+  resultTitle.textContent = ok ? "정답 ✅" : "오답 ❌";
+  resultTitle.style.color = ok ? "white" : "white";
+
+  const picked = extraMsg ? `선택: ${extraMsg}` : "";
+  resultDesc.textContent =
+    `문제: ${q.name}\n정답: ${labelOf(q.answer)}\n${picked}\n설명: ${q.explain}`.replaceAll("\n","  ");
+
+  modalBg.style.display = "flex";
+}
+
+function labelOf(code){
+  switch(code){
+    case "mask": return "마스크";
+    case "n95": return "N95 마스크";
+    case "gown_glove": return "가운+장갑";
+    case "none": return "PPE 불필요";
+    default: return code;
+  }
+}
+
+function pick(ppe){
+  if (!running) return;
+  const q = QUESTIONS[idx];
+  const ok = (ppe === q.answer);
+  if (ok) score += 1;
+  updateTop();
+  showResult(ok, labelOf(ppe));
+}
+
+nextBtn.addEventListener("click", ()=>{
+  modalBg.style.display = "none";
+  idx += 1;
+  updateTop();
+  if (idx >= TOTAL){
+    hint.style.display = "flex";
+    hint.textContent = `교육 완료 👍 점수: ${score}  (시작을 누르면 다시 진행)`;
+  } else {
+    // 자동 다음 문제 시작
+    startRound();
+  }
+});
+
+startBtn.addEventListener("click", ()=>{
+  startRound();
+});
+
+// 버튼 클릭
+document.querySelectorAll("button[data-ppe]").forEach(btn=>{
+  btn.addEventListener("click", ()=> pick(btn.dataset.ppe));
+});
+
+// 초기 표시
+updateTop();
+resetFall();
+</script>
+</body>
+</html>
+```0
