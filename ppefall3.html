@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>환경관리 PPE 퀴즈 (기본 4종 · 질병명 낙하)</title>
+  <style>
+    :root{
+      --bg:#071022;
+      --card:rgba(255,255,255,.07);
+      --stroke:rgba(255,255,255,.12);
+      --text:#eaf0ff;
+      --muted:rgba(234,240,255,.75);
+      --muted2:rgba(234,240,255,.55);
+      --good:#22c55e;
+      --bad:#ef4444;
+      --shadow:0 18px 40px rgba(0,0,0,.45);
+      --r:22px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:radial-gradient(1200px 900px at 50% -200px, rgba(80,160,255,.20), transparent 55%),
+                 radial-gradient(800px 600px at 80% 10%, rgba(34,197,94,.12), transparent 55%),
+                 var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-align:center;
+    }
+
+    .wrap{
+      max-width: 430px;
+      margin: 0 auto;
+      padding: 18px 14px 18px;
+      padding-bottom: calc(18px + env(safe-area-inset-bottom));
+      min-height: 100svh;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .topRow{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr .8fr;
+      gap: 12px;
+    }
+    .tile{
+      background: var(--card);
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 14px 12px;
+      text-align:left;
+    }
+    .tile b{display:block; font-size: 18px; letter-spacing:-.3px}
+    .tile small{display:block; color:var(--muted2); margin-top:4px; font-size: 12px; line-height:1.25}
+    .tile.center{text-align:center}
+    .tile.center b{font-size: 22px}
+    .tile.center small{font-size: 12px}
+
+    /* 안내 박스 */
+    .guide{
+      background: var(--card);
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      padding: 14px 14px 12px;
+      box-shadow: var(--shadow);
+      text-align:left;
+    }
+    .guide h2{
+      margin:0 0 8px;
+      font-size: 18px;
+      letter-spacing:-.4px;
+    }
+    .guide ol{
+      margin:0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height:1.45;
+    }
+
+    /* 상태 줄 */
+    .statusRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .pill{
+      background: rgba(255,255,255,.05);
+      border:1px solid var(--stroke);
+      border-radius: 999px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      min-height: 44px;
+    }
+    .pill .k{color:var(--muted2); font-size: 12px}
+    .pill .v{font-weight:800; font-size: 16px; letter-spacing:-.2px}
+
+    /* 낙하 영역: 더 크게 / 아래 보호구 공간 확보 */
+    .dropArea{
+      position:relative;
+      flex: 1 1 auto;
+      min-height: 240px;
+      background: rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .fallLabel{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      top:-70px;
+      width: 92%;
+      max-width: 360px;
+      padding: 16px 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(10px);
+      font-weight: 900;
+      letter-spacing: -0.6px;
+      font-size: 28px;     /* 감염병 글씨 크기 */
+      line-height: 1.05;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 결과 오버레이(설명 텍스트 제거 버전) */
+    .resultOverlay{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;  /* 버튼 클릭 방해 X */
+    }
+    .resultCard{
+      width: 92%;
+      max-width: 380px;
+      background: rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: var(--r);
+      padding: 16px 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 10px;
+    }
+    .badge{
+      font-weight: 900;
+      font-size: 26px;
+      letter-spacing: -.5px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .badge.good{color: var(--good)}
+    .badge.bad{color: var(--bad)}
+    .resultImg{
+      width: 120px;   /* 이미지 조금 작게 */
+      height: 120px;
+      object-fit: contain;
+      display:block;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,.45));
+    }
+    .subhint{
+      color: var(--muted2);
+      font-size: 12px;
+      line-height:1.3;
+    }
+
+    /* 하단 영역 */
+    .bottom{
+      margin-top: 4px;
+      background: transparent;
+    }
+
+    .bottomHead{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      padding: 2px 2px 6px;
+    }
+    .bottomHead .t{
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing:-.4px;
+    }
+    .bottomHead .s{
+      color: var(--muted2);
+      font-size: 12px;
+    }
+
+    /* 버튼 4개: 화면 답답하지 않게 살짝 작게 */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    button{
+      border:none;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      padding: 14px 12px;
+      color: var(--text);
+      font-family: inherit;
+      box-shadow: var(--shadow);
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active{transform: scale(.99)}
+    .opt b{display:block; font-size: 18px; letter-spacing:-.3px}
+    .opt small{display:block; margin-top:6px; color: var(--muted2); font-size: 12px}
+
+    /* 컨트롤 줄: 재시작 버튼 */
+    .controls{
+      margin-top: 10px;
+      display:flex;
+      justify-content:center;
+      gap: 10px;
+    }
+    .mini{
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 14px;
+      background: rgba(255,255,255,.10);
+    }
+
+    .foot{
+      margin-top: 10px;
+      color: var(--muted2);
+      font-size: 12px;
+    }
+
+    /* 아주 작은 화면에서 더 축소 */
+    @media (max-height: 740px){
+      .fallLabel{font-size: 24px}
+      .dropArea{min-height: 220px}
+      .opt b{font-size: 16px}
+      button{padding: 12px 10px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topRow">
+      <div class="tile">
+        <b>🧹 환경관리 PPE 퀴즈</b>
+        <small>기본 4종 · 질병명 낙하</small>
+      </div>
+      <div class="tile center">
+        <small>문항</small>
+        <b id="qStat">0/10</b>
+      </div>
+      <div class="tile center">
+        <small>점수</small>
+        <b id="score">0</b>
+      </div>
+    </div>
+
+    <div class="guide">
+      <h2>질병/상황을 보고 필요한 PPE 1개를 고르세요</h2>
+      <ol>
+        <li>질병명이 네모칸 위에서 아래로 <b>5초</b> 동안 내려옵니다. (시간 초과 시 오답)</li>
+        <li>아래 버튼에서 PPE 1개를 선택하면 <b>자동 채점</b> 후 <b>자동으로 다음 문제</b>로 넘어갑니다.</li>
+        <li><b>재시작</b> 버튼으로 언제든 처음부터 다시할 수 있어요.</li>
+      </ol>
+    </div>
+
+    <div class="statusRow">
+      <div class="pill">
+        <span class="k">⏳ 제한시간</span>
+        <span class="v" id="timeLeft">5.0s</span>
+      </div>
+      <div class="pill">
+        <span class="k">상태</span>
+        <span class="v" id="state">대기</span>
+      </div>
+    </div>
+
+    <div class="dropArea" id="dropArea">
+      <div class="fallLabel" id="fallLabel">시작 없이 자동 진행</div>
+
+      <!-- 결과 오버레이 (설명 텍스트 제거) -->
+      <div class="resultOverlay" id="resultOverlay">
+        <div class="resultCard">
+          <div class="badge good" id="badge">정답 ✅</div>
+          <img id="resultImg" class="resultImg" alt="result" src="assets/idle.png">
+          <div class="subhint" id="subhint">다음 문제로 넘어갑니다…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="bottomHead">
+        <div class="t">보호구 선택 (4개)</div>
+        <div class="s">한 문제당 1개만 선택</div>
+      </div>
+
+      <div class="grid">
+        <button class="opt" data-ppe="mask">
+          <b>마스크</b>
+          <small>기본(비말/분무)</small>
+        </button>
+        <button class="opt" data-ppe="n95">
+          <b>N95 마스크</b>
+          <small>공기(결핵 등)</small>
+        </button>
+        <button class="opt" data-ppe="gown">
+          <b>가운+장갑</b>
+          <small>접촉(오염물 처리)</small>
+        </button>
+        <button class="opt" data-ppe="none">
+          <b>PPE 불필요</b>
+          <small>위험 낮음(교육용)</small>
+        </button>
+      </div>
+
+      <div class="controls">
+        <button id="restartBtn" class="mini">재시작</button>
+      </div>
+
+      <div class="foot">※ 교육용 단순화 버전(표준주의+추가주의 개념 기반)</div>
+    </div>
+  </div>
+
+  <script>
+    /**********************
+     * 설정
+     **********************/
+    const TOTAL = 10;
+    const FALL_SECONDS = 5.0;           // “5초 내려오기”
+    const AFTER_SCORE_DELAY = 650;      // 채점 후 다음문제로 넘어가기 딜레이(ms)
+
+    const ASSET = {
+      idle: "assets/idle.png",
+      good: "assets/correct.png",
+      bad:  "assets/wrong.png",
+    };
+
+    // 문제 데이터(예시). 필요하면 여기만 바꿔서 계속 늘리면 됨.
+    // ppe: mask | n95 | gown | none
+    const QUESTIONS = [
+      { text:"인플루엔자 환자 구역 청소", ppe:"mask" },
+      { text:"결핵 병실 청소", ppe:"n95" },
+      { text:"VRE/CRE 장기 재실 병실 퇴실 후 청소", ppe:"gown" },
+      { text:"수두(교육용 단순화)", ppe:"n95" },
+      { text:"혈액/체액 오염물 처리", ppe:"gown" },
+      { text:"일반 복도 청소(위험 낮음)", ppe:"none" },
+      { text:"호흡기 증상 환자 대기구역 청소", ppe:"mask" },
+      { text:"CDI 환자 구역 청소(교육용 단순화)", ppe:"gown" },
+      { text:"MRSA 환자 주변 환경 청소(교육용)", ppe:"gown" },
+      { text:"외래 대기구역 정리(위험 낮음)", ppe:"none" },
+    ];
+
+    /**********************
+     * 상태
+     **********************/
+    let idx = 0;
+    let score = 0;
+    let running = false;
+    let answered = false;
+
+    let rafId = null;
+    let startTime = 0;
+
+    const elQ = document.getElementById("qStat");
+    const elScore = document.getElementById("score");
+    const elTime = document.getElementById("timeLeft");
+    const elState = document.getElementById("state");
+    const elLabel = document.getElementById("fallLabel");
+    const dropArea = document.getElementById("dropArea");
+
+    const overlay = document.getElementById("resultOverlay");
+    const badge = document.getElementById("badge");
+    const resultImg = document.getElementById("resultImg");
+    const subhint = document.getElementById("subhint");
+    const restartBtn = document.getElementById("restartBtn");
+
+    function setState(txt){ elState.textContent = txt; }
+    function setTime(t){ elTime.textContent = `${t.toFixed(1)}s`; }
+
+    function updateHeader(){
+      elQ.textContent = `${Math.min(idx+1, TOTAL)}/${TOTAL}`;
+      elScore.textContent = `${score}`;
+    }
+
+    function stopAnim(){
+      if(rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    function showOverlay(isGood){
+      overlay.style.display = "flex";
+      badge.textContent = isGood ? "정답 ✅" : "오답 ❌";
+      badge.className = "badge " + (isGood ? "good" : "bad");
+      resultImg.src = isGood ? ASSET.good : ASSET.bad;
+      subhint.textContent = "다음 문제로 넘어갑니다…";
+    }
+
+    function hideOverlay(){
+      overlay.style.display = "none";
+      resultImg.src = ASSET.idle;
+    }
+
+    function layoutFallStart(){
+      // 라벨을 맨 위(살짝 위)로
+      elLabel.style.top = "-70px";
+    }
+
+    function animateFall(){
+      const areaH = dropArea.clientHeight;
+      const labelH = elLabel.getBoundingClientRect().height;
+
+      const endY = Math.max(16, areaH - labelH - 14); // 바닥에서 살짝 띄우기
+      const startY = -70;
+
+      const now = performance.now();
+      const elapsed = (now - startTime) / 1000;
+      const remaining = Math.max(0, FALL_SECONDS - elapsed);
+      setTime(remaining);
+
+      const p = Math.min(1, elapsed / FALL_SECONDS);
+      const y = startY + (endY - startY) * p;
+      elLabel.style.top = `${y}px`;
+
+      if(p >= 1 && running && !answered){
+        // 시간 초과 = 오답 처리
+        grade(null);
+        return;
+      }
+
+      rafId = requestAnimationFrame(animateFall);
+    }
+
+    function startQuestion(){
+      if(idx >= TOTAL){
+        running = false;
+        answered = true;
+        setState("완료");
+        setTime(0);
+        elLabel.textContent = `끝! 점수 ${score}/${TOTAL}`;
+        showOverlay(true);
+        badge.textContent = "완료 ✅";
+        badge.className = "badge good";
+        subhint.textContent = "재시작 버튼을 눌러 다시 시작할 수 있어요.";
+        resultImg.src = ASSET.idle;
+        return;
+      }
+
+      answered = false;
+      running = true;
+      hideOverlay();
+
+      const q = QUESTIONS[idx % QUESTIONS.length];
+      elLabel.textContent = q.text;
+
+      layoutFallStart();
+      updateHeader();
+      setState("진행");
+      setTime(FALL_SECONDS);
+
+      startTime = performance.now();
+      stopAnim();
+      rafId = requestAnimationFrame(animateFall);
+    }
+
+    function nextQuestion(){
+      idx++;
+      startQuestion();
+    }
+
+    function grade(picked){
+      if(answered) return;
+      answered = true;
+      running = false;
+      stopAnim();
+
+      const q = QUESTIONS[idx % QUESTIONS.length];
+      const isGood = picked === q.ppe;
+
+      if(isGood) score++;
+      updateHeader();
+      setState(isGood ? "정답" : "오답");
+      setTime(0);
+
+      showOverlay(isGood);
+
+      // 자동으로 다음 문제
+      setTimeout(() => {
+        hideOverlay();
+        nextQuestion();
+      }, AFTER_SCORE_DELAY);
+    }
+
+    // 버튼 이벤트
+    document.querySelectorAll("button.opt").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.preventDefault();
+        const picked = btn.dataset.ppe;
+        grade(picked);
+      }, {passive:false});
+    });
+
+    // 재시작
+    restartBtn.addEventListener("click", (e)=>{
+      e.preventDefault();
+      resetAll();
+    }, {passive:false});
+
+    function resetAll(){
+      stopAnim();
+      idx = 0;
+      score = 0;
+      running = false;
+      answered = false;
+      hideOverlay();
+      updateHeader();
+      setState("대기");
+      setTime(FALL_SECONDS);
+      elLabel.textContent = "시작 없이 자동 진행";
+      // 바로 1번 문제 시작
+      startQuestion();
+    }
+
+    // 화면 크기 바뀌면(가로/세로 전환) 위치 깨짐 방지
+    window.addEventListener("resize", ()=>{
+      if(!answered && running){
+        // 현재 문제 다시 시작(안전)
+        startQuestion();
+      }
+    });
+
+    // 페이지 로드하면 자동 시작(시작 버튼 필요 없음)
+    resetAll();
+  </script>
+</body>
+</html>
