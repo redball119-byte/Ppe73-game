@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>환경관리담당자 보호구 교육 - 질병 낙하 퀴즈</title>
+  <style>
+    :root{
+      --bg1:#071022;
+      --bg2:#050a14;
+      --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.10);
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.70);
+      --good:#22c55e;
+      --bad:#ff4d4f;
+      --r:22px;
+      --shadow: 0 18px 40px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(255,255,255,.08), transparent 55%),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      overflow:hidden;
+    }
+
+    .app{
+      min-height:100dvh;
+      display:flex;
+      flex-direction:column;
+      padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+      gap: 12px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ===== 상단 바(가로 1줄로 낮게) ===== */
+    .topbar{
+      display:grid;
+      grid-template-columns: 1fr auto auto;
+      gap:10px;
+      align-items:stretch;
+    }
+    .pill{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      padding: 10px 14px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-height: 52px;
+    }
+    .title{
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      line-height: 1.1;
+      font-size: 16px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .sub{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .twrap{min-width:0}
+    .stat{
+      min-width: 118px;
+      justify-content:center;
+      text-align:center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .stat small{
+      display:block;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    /* 재시작 버튼 작게 */
+    .btn-mini{
+      width: 54px;
+      justify-content:center;
+      gap:0;
+      padding: 10px 0;
+      cursor:pointer;
+      user-select:none;
+      font-weight:800;
+    }
+    .btn-mini:active{transform: translateY(1px)}
+    .btn-mini span{font-size:18px}
+
+    /* ===== 안내 ===== */
+    .info{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+    }
+    .info .h{
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+    .info .p{
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* ===== 게임 영역 ===== */
+    .game{
+      position: relative;
+      flex: 1;
+      min-height: 280px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* 내려오는 문제(질병) */
+    .fall{
+      position:absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -90px;
+      width: min(92%, 520px);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 18px 16px;
+      text-align:center;
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: -0.6px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.40);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      will-change: transform, top;
+    }
+    .fall small{
+      display:block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: 6px;
+      letter-spacing: 0;
+    }
+
+    /* 정/오답 이미지 */
+    .feedback{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .12s ease;
+    }
+    .feedback.show{opacity:1}
+    .feedback img{
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 30px rgba(0,0,0,.55));
+    }
+
+    /* ===== 하단 선택 영역(항상 고정) ===== */
+    .choices{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .choicesTop{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+    .choicesTop .h{
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing:-0.4px;
+    }
+    .choicesTop .s{
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .opt{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      padding: 18px 12px;
+      text-align:center;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .06s ease, background .12s ease, border-color .12s ease;
+      min-height: 78px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap: 6px;
+    }
+    .opt:active{ transform: translateY(1px) }
+    .opt .k{
+      font-size: 20px;
+      font-weight: 1000;
+      letter-spacing: -0.5px;
+    }
+    .opt .d{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .opt.correct{
+      border-color: rgba(34,197,94,.55);
+      background: rgba(34,197,94,.12);
+    }
+    .opt.wrong{
+      border-color: rgba(255,77,79,.55);
+      background: rgba(255,77,79,.10);
+    }
+
+    .footerHint{
+      text-align:center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(234,240,255,.55);
+      font-weight: 700;
+    }
+
+    /* 작은 화면에서 글씨/패딩 살짝 축소 */
+    @media (max-height: 720px){
+      .fall{ font-size: 20px; padding: 16px 14px; }
+      .opt{ min-height: 72px; padding: 16px 10px; }
+      .opt .k{ font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="pill">
+        <div class="twrap">
+          <div class="title">🧹 환경관리담당자 보호구 교육</div>
+          <div class="sub">질병/상황이 내려오면 맞는 PPE 1개를 선택</div>
+        </div>
+      </div>
+
+      <div class="pill stat" id="progress">
+        문항 <span id="qNow">1</span>/<span id="qTotal">5</span>
+        <small>점수 <span id="score">0</span></small>
+      </div>
+
+      <div class="pill btn-mini" id="restart" title="재시작">
+        <span>↻</span>
+      </div>
+    </div>
+
+    <div class="info">
+      <div class="h">규칙</div>
+      <div class="p">
+        위에서 내려오는 <b>질병/상황</b>을 보고 아래에서 <b>PPE 1개</b>를 고르세요.
+        맞으면 <b>정답</b> 이미지, 틀리면 <b>오답</b> 이미지가 잠깐 표시되고 다음 문제로 넘어갑니다.
+      </div>
+    </div>
+
+    <div class="game" id="game">
+      <div class="fall" id="fallBox">
+        <div id="fallText">로딩중…</div>
+        <small id="fallTimer">남은시간 0.0s</small>
+      </div>
+
+      <div class="feedback" id="fb">
+        <img id="fbImg" alt="feedback" src="assets/idle.png">
+      </div>
+    </div>
+
+    <div class="choices">
+      <div class="choicesTop">
+        <div class="h">보호구 선택 (4개)</div>
+        <div class="s">한 문제당 1개만 선택</div>
+      </div>
+
+      <div class="grid" id="grid">
+        <div class="opt" data-key="mask">
+          <div class="k">마스크</div>
+          <div class="d">기본(비말/분무)</div>
+        </div>
+        <div class="opt" data-key="n95">
+          <div class="k">N95</div>
+          <div class="d">공기(결핵 등)</div>
+        </div>
+        <div class="opt" data-key="gown_glove">
+          <div class="k">가운+장갑</div>
+          <div class="d">접촉(오염물 처리)</div>
+        </div>
+        <div class="opt" data-key="none">
+          <div class="k">보호구 불필요</div>
+          <div class="d">위험 낮음(교육용)</div>
+        </div>
+      </div>
+
+      <div class="footerHint">선택하면 자동으로 다음 문제로 넘어갑니다.</div>
+    </div>
+  </div>
+
+<script>
+  // ====== 문제(5개) ======
+  // key: mask | n95 | gown_glove | none
+  const QUESTIONS = [
+    { text: "인플루엔자 환자 구역 청소", answer: "mask" },
+    { text: "결핵 의심환자 병실 청소", answer: "n95" },
+    { text: "혈액/체액 오염물 처리(스필)", answer: "gown_glove" },
+    { text: "VRE/CRE 장기 재실 병실 퇴실 후 환경정리", answer: "gown_glove" },
+    { text: "일반 복도 청소", answer: "none" },
+  ];
+
+  // ====== 설정 ======
+  const FALL_DURATION_MS = 5200;  // 내려오는 전체 시간(5.2초)
+  const FEEDBACK_MS = 550;        // 정/오답 이미지 표시 시간
+  const NEXT_DELAY_MS = 250;      // 다음 문제 시작 딜레이
+  const START_Y = -90;            // 시작 위치
+  let endY = 0;                   // 게임 영역 높이에 따라 계산
+
+  // ====== 상태 ======
+  let idx = 0;
+  let score = 0;
+  let running = false;
+  let locked = false;
+  let rafId = null;
+  let startTime = 0;
+
+  // ====== DOM ======
+  const qNowEl = document.getElementById("qNow");
+  const qTotalEl = document.getElementById("qTotal");
+  const scoreEl = document.getElementById("score");
+  const fallBox = document.getElementById("fallBox");
+  const fallText = document.getElementById("fallText");
+  const fallTimer = document.getElementById("fallTimer");
+  const game = document.getElementById("game");
+  const grid = document.getElementById("grid");
+  const restartBtn = document.getElementById("restart");
+  const fb = document.getElementById("fb");
+  const fbImg = document.getElementById("fbImg");
+
+  qTotalEl.textContent = QUESTIONS.length;
+
+  function calcEndY(){
+    // game 안에서 fallBox가 "바닥 가까이" 올 때까지 내려오게
+    const gh = game.clientHeight;
+    // 박스 높이 고려해서 약간 위에서 멈추게
+    endY = gh - 120;
+  }
+
+  window.addEventListener("resize", () => {
+    calcEndY();
+  });
+
+  function setFeedback(type){
+    // type: "idle" | "correct" | "wrong"
+    fbImg.src = `assets/${type}.png`;
+    fb.classList.add("show");
+    setTimeout(()=> fb.classList.remove("show"), FEEDBACK_MS);
+  }
+
+  function clearOptionStates(){
+    [...grid.querySelectorAll(".opt")].forEach(el=>{
+      el.classList.remove("correct","wrong");
+    });
+  }
+
+  function setHeader(){
+    qNowEl.textContent = (idx + 1);
+    scoreEl.textContent = score;
+  }
+
+  function setQuestion(){
+    const q = QUESTIONS[idx];
+    fallText.textContent = q.text;
+    fallTimer.textContent = "남은시간 5.0s";
+  }
+
+  function stopFall(){
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    running = false;
+  }
+
+  function startFall(){
+    calcEndY();
+    setHeader();
+    setQuestion();
+    clearOptionStates();
+    locked = false;
+    running = true;
+    startTime = performance.now();
+
+    // 위치 초기화
+    fallBox.style.top = START_Y + "px";
+
+    const step = (t) => {
+      if (!running) return;
+
+      const elapsed = t - startTime;
+      const p = Math.min(elapsed / FALL_DURATION_MS, 1);
+      const y = START_Y + (endY - START_Y) * p;
+
+      fallBox.style.top = y + "px";
+
+      // 타이머 표시
+      const remain = Math.max(0, (FALL_DURATION_MS - elapsed) / 1000);
+      fallTimer.textContent = `남은시간 ${remain.toFixed(1)}s`;
+
+      if (p >= 1){
+        // 시간 초과 = 오답 처리
+        locked = true;
+        setFeedback("wrong");
+        goNext(false);
+        return;
+      }
+
+      rafId = requestAnimationFrame(step);
+    };
+
+    rafId = requestAnimationFrame(step);
+  }
+
+  function goNext(wasCorrect){
+    stopFall();
+
+    // 잠깐 대기 후 다음 문제
+    setTimeout(() => {
+      idx++;
+      if (idx >= QUESTIONS.length){
+        // 끝
+        showFinish();
+      }else{
+        startFall();
+      }
+    }, NEXT_DELAY_MS);
+  }
+
+  function showFinish(){
+    // 마지막 결과 화면(질병 박스를 중앙 고정)
+    calcEndY();
+    running = false;
+    locked = true;
+
+    fallBox.style.top = (game.clientHeight/2 - 70) + "px";
+    fallText.textContent = "끝! 수고하셨습니다 👏";
+    fallTimer.textContent = `최종 점수: ${score} / ${QUESTIONS.length}`;
+    setFeedback("idle");
+  }
+
+  function answerPick(key, el){
+    if (locked || !running) return;
+    locked = true;
+
+    const q = QUESTIONS[idx];
+    const correct = (key === q.answer);
+
+    if (correct){
+      score++;
+      el.classList.add("correct");
+      setFeedback("correct");
+    }else{
+      el.classList.add("wrong");
+      setFeedback("wrong");
+    }
+
+    setHeader();
+    setTimeout(()=> goNext(correct), FEEDBACK_MS);
+  }
+
+  grid.addEventListener("click", (e) => {
+    const opt = e.target.closest(".opt");
+    if (!opt) return;
+    answerPick(opt.dataset.key, opt);
+  });
+
+  restartBtn.addEventListener("click", () => {
+    // 처음부터
+    stopFall();
+    idx = 0;
+    score = 0;
+    setFeedback("idle");
+    startFall();
+  });
+
+  // 시작
+  setFeedback("idle");
+  startFall();
+</script>
+</body>
+</html>
