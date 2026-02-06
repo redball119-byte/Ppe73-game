@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>환경관리담당자 보호구 교육</title>
+  <style>
+    :root{
+      --bg1:#071022;
+      --bg2:#050a14;
+      --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.12);
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.68);
+      --good:#22c55e;
+      --bad:#ff4d4f;
+      --shadow: 0 18px 40px rgba(0,0,0,.35);
+      --r: 22px;
+    }
+
+    *{box-sizing:border-box}
+    html, body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 700px at 20% 0%, #0a1b3a 0%, var(--bg1) 40%, var(--bg2) 100%);
+      overflow:hidden; /* 스크롤로 레이아웃 깨지는거 방지 */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app{
+      min-height:100dvh;
+      padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+    }
+
+    /* ✅ 상단을 "가로 1줄"로 낮게 */
+    .topbar{
+      display:flex;
+      align-items:stretch;
+      gap:10px;
+    }
+    .top-left{
+      flex: 1 1 auto;
+      padding: 12px 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      min-height: 64px;
+    }
+    .broom{
+      font-size: 20px;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,.35));
+    }
+    .title-wrap{
+      display:flex;
+      flex-direction:column;
+      line-height:1.15;
+      gap:4px;
+      min-width:0;
+    }
+    .title{
+      font-weight: 900;
+      letter-spacing: -.02em;
+      font-size: clamp(16px, 4.4vw, 20px);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .subtitle{
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-right{
+      flex: 0 0 150px;
+      padding: 10px 12px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:6px;
+      min-height: 64px;
+      text-align:center;
+    }
+    .meta{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .meta strong{color:var(--text); font-size: 14px}
+
+    .restart{
+      flex: 0 0 72px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 800;
+      border-radius: var(--r);
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      cursor:pointer;
+      user-select:none;
+    }
+    .restart:active{transform: scale(.98)}
+
+    /* 안내 */
+    .guide{
+      padding: 12px 14px;
+      line-height:1.35;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .guide b{color:var(--text)}
+
+    /* 타이머/상태 */
+    .statusbar{
+      display:flex;
+      gap:10px;
+      align-items:stretch;
+    }
+    .pill{
+      flex:1 1 50%;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 44px;
+    }
+    .pill strong{color:var(--text); font-size: 16px}
+    .pill .badge{
+      font-weight: 900;
+      letter-spacing:.02em;
+      color: var(--text);
+    }
+
+    /* ✅ 낙하 영역: 남는 높이를 최대한 먹고, 아래 선택지는 화면 안에 고정 */
+    .main{
+      flex: 1 1 auto;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      min-height: 0; /* 중요: flex overflow 방지 */
+    }
+
+    .fall-area{
+      flex: 1 1 auto;
+      min-height: 200px;
+      padding: 14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .fall-box{
+      position:relative;
+      width:100%;
+      height:100%;
+      border-radius: calc(var(--r) - 6px);
+      border: 2px dashed rgba(255,255,255,.18);
+      background: rgba(0,0,0,.08);
+    }
+
+    .fall-text{
+      position:absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 12px;
+      padding: 14px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 14px 30px rgba(0,0,0,.35);
+      font-weight: 900;
+      text-align:center;
+      max-width: calc(100% - 22px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: clamp(18px, 5.4vw, 28px);
+      letter-spacing: -.02em;
+    }
+
+    /* 선택 영역 */
+    .choices{
+      padding: 14px;
+    }
+    .choices-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-bottom: 12px;
+      gap:10px;
+    }
+    .choices-head .h{
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: -.02em;
+    }
+    .choices-head .hint{
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+
+    .btn{
+      border-radius: 18px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 14px 28px rgba(0,0,0,.25);
+      padding: 14px 12px;
+      text-align:center;
+      cursor:pointer;
+      user-select:none;
+      min-height: 70px; /* ✅ 화면 아래가 잘려도 버튼 최소 보이게 */
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:6px;
+    }
+    .btn:active{transform: scale(.985)}
+    .btn .big{
+      font-weight: 900;
+      font-size: clamp(18px, 5vw, 22px);
+      letter-spacing: -.02em;
+    }
+    .btn .small{
+      color: var(--muted);
+      font-size: 12px;
+      line-height:1.15;
+    }
+
+    .footer-note{
+      margin-top: 10px;
+      color: var(--muted);
+      text-align:center;
+      font-size: 12px;
+    }
+
+    /* 결과 토스트 */
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.18);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+      font-weight: 800;
+      font-size: 13px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      max-width: calc(100vw - 28px);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    /* 작은 화면(가로폭/높이 극단) 대응 */
+    @media (max-height: 720px){
+      .guide{display:none;} /* ✅ 공간 확보: 안내카드 숨김 */
+      .btn{min-height: 64px; padding: 12px 10px;}
+      .choices{padding: 12px}
+      .fall-area{padding: 12px}
+    }
+    @media (max-height: 630px){
+      .statusbar{display:none;} /* ✅ 더 작으면 상태바도 숨겨서 보호구가 절대 안 짤리게 */
+      .top-right{flex-basis: 140px;}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- ✅ 상단 1줄 -->
+    <div class="topbar">
+      <div class="top-left card">
+        <div class="broom">🧹</div>
+        <div class="title-wrap">
+          <div class="title">환경관리담당자 보호구 교육</div>
+          <div class="subtitle">낙하 퀴즈</div>
+        </div>
+      </div>
+
+      <div class="restart" id="btnRestart" title="재시작">↻</div>
+
+      <div class="top-right card">
+        <div class="meta"><span>문항</span><strong id="qCount">1/5</strong></div>
+        <div class="meta"><span>점수</span><strong id="score">0</strong></div>
+      </div>
+    </div>
+
+    <!-- 안내(작은 화면에서는 자동 숨김) -->
+    <div class="guide card">
+      <b>질병/상황</b>이 박스 안에서 아래로 <b>5초</b> 동안 내려옵니다. 아래에서 <b>PPE 1개</b>를 선택하면 자동 채점 후 다음 문제로 넘어갑니다.
+    </div>
+
+    <!-- 상태 -->
+    <div class="statusbar">
+      <div class="pill">
+        <span>⏳ 제한시간</span>
+        <strong id="timeLeft">5.0s</strong>
+      </div>
+      <div class="pill">
+        <span>상태</span>
+        <span class="badge" id="state">진행</span>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- ✅ 낙하 영역(크게) -->
+      <div class="fall-area card">
+        <div class="fall-box" id="fallBox">
+          <div class="fall-text" id="fallText">준비 중…</div>
+        </div>
+      </div>
+
+      <!-- ✅ 보호구(항상 화면 안) -->
+      <div class="choices card">
+        <div class="choices-head">
+          <div class="h">보호구 선택 (4개)</div>
+          <div class="hint">한 문제당 1개만 선택</div>
+        </div>
+
+        <div class="grid">
+          <div class="btn" data-choice="mask">
+            <div class="big">마스크</div>
+            <div class="small">기본(비말/분무)</div>
+          </div>
+          <div class="btn" data-choice="n95">
+            <div class="big">N95</div>
+            <div class="small">공기(결핵 등)</div>
+          </div>
+          <div class="btn" data-choice="gown_gloves">
+            <div class="big">가운+장갑</div>
+            <div class="small">접촉(오염물 처리)</div>
+          </div>
+          <div class="btn" data-choice="none">
+            <div class="big">보호구 불필요</div>
+            <div class="small">위험 낮음(교육용)</div>
+          </div>
+        </div>
+
+        <div class="footer-note" id="footerNote">선택하면 자동으로 다음 문제로 넘어갑니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">결과</div>
+
+  <script>
+    // ✅ 문제(원하면 여기만 늘리면 됨)
+    // answer: mask | n95 | gown_gloves | none
+    const QUESTIONS = [
+      { text: "인플루엔자 환자 구역 청소", answer: "mask" },
+      { text: "결핵 의심 환자 격리실 청소", answer: "n95" },
+      { text: "VRE/CRE 장기 재실 병실 퇴실 후 터미널 청소", answer: "gown_gloves" },
+      { text: "일반 복도 청소", answer: "none" },
+      { text: "혈액/체액 오염물 처리(스필)", answer: "gown_gloves" },
+    ];
+
+    const FALL_SECONDS = 5.0;
+
+    const elQCount = document.getElementById("qCount");
+    const elScore  = document.getElementById("score");
+    const elTime   = document.getElementById("timeLeft");
+    const elState  = document.getElementById("state");
+    const elText   = document.getElementById("fallText");
+    const elBox    = document.getElementById("fallBox");
+    const elToast  = document.getElementById("toast");
+    const btnRestart = document.getElementById("btnRestart");
+
+    let idx = 0;
+    let score = 0;
+    let running = false;
+    let answered = false;
+
+    let startTS = 0;
+    let rafId = 0;
+
+    function showToast(msg){
+      elToast.textContent = msg;
+      elToast.classList.add("show");
+      setTimeout(() => elToast.classList.remove("show"), 900);
+    }
+
+    function setState(text, kind){
+      elState.textContent = text;
+      if(kind === "good") elState.style.color = "var(--good)";
+      else if(kind === "bad") elState.style.color = "var(--bad)";
+      else elState.style.color = "var(--text)";
+    }
+
+    function resetFallPosition(){
+      elText.style.top = "12px";
+    }
+
+    function nextQuestion(){
+      idx++;
+      if(idx >= QUESTIONS.length){
+        // 끝
+        running = false;
+        answered = true;
+        setState("완료", "good");
+        elTime.textContent = "0.0s";
+        showToast(`끝! 점수 ${score}/${QUESTIONS.length}`);
+        return;
+      }
+      startRound();
+    }
+
+    function startRound(){
+      answered = false;
+      running = true;
+      setState("진행", null);
+
+      const q = QUESTIONS[idx];
+      elText.textContent = q.text;
+      elQCount.textContent = `${idx+1}/${QUESTIONS.length}`;
+      elScore.textContent = `${score}`;
+      elTime.textContent = `${FALL_SECONDS.toFixed(1)}s`;
+
+      resetFallPosition();
+      startTS = performance.now();
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function tick(ts){
+      if(!running) return;
+
+      const elapsed = (ts - startTS) / 1000;
+      const left = Math.max(0, FALL_SECONDS - elapsed);
+      elTime.textContent = `${left.toFixed(1)}s`;
+
+      // 박스 높이에 맞춰 아래로 이동 (텍스트가 박스 안에서 내려오도록)
+      const boxH = elBox.clientHeight;
+      const textH = elText.offsetHeight;
+      const topStart = 12;
+      const topEnd = Math.max(12, boxH - textH - 14);
+
+      const p = Math.min(1, elapsed / FALL_SECONDS);
+      const y = topStart + (topEnd - topStart) * p;
+      elText.style.top = `${y}px`;
+
+      if(elapsed >= FALL_SECONDS && !answered){
+        // 시간초과 = 오답 처리
+        answered = true;
+        setState("오답", "bad");
+        const correct = QUESTIONS[idx].answer;
+        showToast(`시간초과 ✕  정답: ${labelOf(correct)}`);
+        setTimeout(nextQuestion, 650);
+        return;
+      }
+
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function labelOf(choice){
+      switch(choice){
+        case "mask": return "마스크";
+        case "n95": return "N95";
+        case "gown_gloves": return "가운+장갑";
+        case "none": return "보호구 불필요";
+        default: return choice;
+      }
+    }
+
+    function choose(choice){
+      if(!running || answered) return;
+      answered = true;
+
+      const correct = QUESTIONS[idx].answer;
+      if(choice === correct){
+        score++;
+        elScore.textContent = `${score}`;
+        setState("정답", "good");
+        showToast(`정답 ✓`);
+      }else{
+        setState("오답", "bad");
+        showToast(`오답 ✕  정답: ${labelOf(correct)}`);
+      }
+
+      setTimeout(nextQuestion, 520);
+    }
+
+    // 버튼 이벤트
+    document.querySelectorAll(".btn").forEach(b=>{
+      b.addEventListener("click", ()=> choose(b.dataset.choice));
+    });
+
+    // 재시작
+    function restart(){
+      idx = 0;
+      score = 0;
+      running = true;
+      answered = false;
+      startRound();
+      showToast("재시작");
+    }
+    btnRestart.addEventListener("click", restart);
+
+    // 시작
+    restart();
+
+    // 화면 회전/크기 변화 시 위치 안정화
+    window.addEventListener("resize", ()=> {
+      if(!running) return;
+      resetFallPosition();
+      startTS = performance.now();
+    });
+  </script>
+</body>
+</html>
