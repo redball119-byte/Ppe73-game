@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>환경관리 PPE 교육 게임</title>
+
+<style>
+body{
+margin:0;
+background:#071022;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+.header{
+display:flex;
+justify-content:space-around;
+padding:15px;
+font-size:18px;
+}
+
+#gameBox{
+margin:20px;
+height:220px;
+border-radius:20px;
+background:rgba(255,255,255,0.05);
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:26px;
+}
+
+button{
+padding:18px;
+margin:10px;
+font-size:18px;
+border-radius:15px;
+border:none;
+width:40%;
+}
+
+.start{background:#1f8b4c;color:white}
+.ppe{background:#2c344a;color:white}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<div>🧹 환경관리 PPE 퀴즈</div>
+<div>문항 <span id="q">0</span>/10</div>
+<div>점수 <span id="s">0</span></div>
+</div>
+
+<div id="gameBox">시작 버튼 누르세요</div>
+
+<button class="start" onclick="start()">시작</button>
+
+<div>
+<button class="ppe" onclick="pick('장갑')">장갑</button>
+<button class="ppe" onclick="pick('마스크')">마스크</button><br>
+<button class="ppe" onclick="pick('가운')">가운</button>
+<button class="ppe" onclick="pick('고글')">고글</button>
+</div>
+
+<script>
+let diseases=[
+{q:"혈액/체액 청소 상황",a:"장갑"},
+{q:"기침 환자 병실 청소",a:"마스크"},
+{q:"오염 가능 환경청소",a:"가운"},
+{q:"소독약 분무 작업",a:"고글"},
+{q:"폐기물 봉투 처리",a:"장갑"},
+{q:"비말환자 병실",a:"마스크"},
+{q:"격리실 바닥청소",a:"장갑"},
+{q:"소독제 분사",a:"고글"},
+{q:"오염 침구 교체",a:"가운"},
+{q:"일반 병실 청소",a:"장갑"}
+];
+
+let cur;
+let score=0;
+let num=0;
+
+function start(){
+score=0;
+num=0;
+document.getElementById("s").innerHTML=0;
+document.getElementById("q").innerHTML=0;
+next();
+}
+
+function next(){
+if(num>=10){
+document.getElementById("gameBox").innerHTML="교육 완료 👍 점수:"+score;
+return;
+}
+cur=diseases[Math.floor(Math.random()*diseases.length)];
+document.getElementById("gameBox").innerHTML=cur.q;
+document.getElementById("q").innerHTML=num+1;
+}
+
+function pick(x){
+if(!cur)return;
+
+if(x==cur.a){
+score++;
+alert("정답 👍");
+}else{
+alert("오답 ❌ 정답:"+cur.a);
+}
+
+num++;
+document.getElementById("s").innerHTML=score;
+next();
+}
+</script>
+
+</body>
+</html>
+```0
