@@ -1,1 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPE 교육 게임</title>
 
+<style>
+body{
+    margin:0;
+    background:#0b1020;
+    color:white;
+    font-family:pretendard, sans-serif;
+    text-align:center;
+}
+
+h1{margin-top:20px}
+
+#game{
+    position:relative;
+    width:100%;
+    height:600px;
+    background:#11182e;
+    overflow:hidden;
+    border-top:2px solid #333;
+}
+
+.player{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:90px;
+}
+
+.item{
+    position:absolute;
+    width:60px;
+    top:-80px;
+}
+
+button{
+    padding:15px 25px;
+    margin:10px;
+    font-size:18px;
+    border-radius:10px;
+    border:none;
+    background:#7c3aed;
+    color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>73병동 PPE 캐치 게임</h1>
+<p>좌우 이동해서 PPE 잡기 😎</p>
+
+<button onclick="startGame()">게임 시작</button>
+
+<div id="game">
+    <img src="assets/idle.png" class="player" id="player">
+</div>
+
+<h2>점수: <span id="score">0</span></h2>
+
+<script>
+let score=0;
+let gameInterval;
+
+function startGame(){
+    score=0;
+    document.getElementById("score").innerText=score;
+    gameInterval=setInterval(dropItem,1200);
+}
+
+function dropItem(){
+    const game=document.getElementById("game");
+
+    let item=document.createElement("img");
+    item.src="assets/idle.png"; // 떨어지는 캐릭터 (지금 테스트용)
+    item.className="item";
+    item.style.left=Math.random()*80+"%";
+
+    game.appendChild(item);
+
+    let fall=setInterval(()=>{
+        item.style.top=(item.offsetTop+5)+"px";
+
+        if(item.offsetTop>550){
+            item.remove();
+            clearInterval(fall);
+        }
+
+        checkCatch(item,fall);
+
+    },30);
+}
+
+function checkCatch(item,fall){
+    const player=document.getElementById("player");
+
+    let itemRect=item.getBoundingClientRect();
+    let playerRect=player.getBoundingClientRect();
+
+    if(
+        itemRect.bottom > playerRect.top &&
+        itemRect.left < playerRect.right &&
+        itemRect.right > playerRect.left
+    ){
+        score++;
+        document.getElementById("score").innerText=score;
+        item.remove();
+        clearInterval(fall);
+    }
+}
+
+document.addEventListener("keydown",e=>{
+    const player=document.getElementById("player");
+    let left=player.offsetLeft;
+
+    if(e.key==="ArrowLeft") player.style.left=(left-30)+"px";
+    if(e.key==="ArrowRight") player.style.left=(left+30)+"px";
+});
+</script>
+
+</body>
+</html>
