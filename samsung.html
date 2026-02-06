@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>낙하형 PPE 선택 게임</title>
+  <style>
+    :root{
+      --bg:#071022;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.14);
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.72);
+      --good:#22c55e;
+      --bad:#ef4444;
+      --accent:#60a5fa;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background: radial-gradient(1200px 700px at 20% 0%, #132045 0%, var(--bg) 55%);
+      color:var(--text); font-family: system-ui, -apple-system, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+      min-height:100vh;
+    }
+    .wrap{
+      max-width: 520px; margin: 0 auto; padding: 14px 12px 18px;
+    }
+    .hud{
+      display:flex; gap:10px; justify-content:space-between; align-items:center;
+      margin-bottom:10px;
+    }
+    .pill{
+      background: var(--card); border:1px solid var(--stroke); border-radius:999px;
+      padding:10px 12px; font-weight:800; letter-spacing:.2px;
+      display:flex; gap:8px; align-items:center; min-width: 150px; justify-content:center;
+    }
+    .pill small{font-weight:700; color:var(--muted)}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
+      border:1px solid var(--stroke); border-radius:22px;
+      padding: 12px; overflow:hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+    canvas{
+      width:100%; height:auto; display:block;
+      border-radius:18px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .tips{
+      margin:10px 4px 12px; color:var(--muted); font-size:13px; line-height:1.35;
+    }
+    .panel{
+      margin-top: 10px;
+      background: var(--card2);
+      border:1px solid var(--stroke);
+      border-radius: 22px;
+      padding: 12px;
+    }
+    .panel h3{
+      margin: 0 0 10px; font-size:15px; letter-spacing:.2px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:10px;
+    }
+    button{
+      appearance:none; border:1px solid var(--stroke); background: rgba(255,255,255,.07);
+      color: var(--text); border-radius: 16px;
+      padding: 14px 12px;
+      font-size: 16px; font-weight: 900;
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      touch-action: manipulation;
+    }
+    button .sub{font-size:12px; color:var(--muted); font-weight:800}
+    button.sel{ outline:2px solid rgba(96,165,250,.55); border-color: rgba(96,165,250,.65); background: rgba(96,165,250,.18); }
+    .row{
+      display:flex; gap:10px; margin-top:10px;
+    }
+    .row button{
+      flex:1;
+      justify-content:center;
+      border-radius: 18px;
+    }
+    .primary{ background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.55); }
+    .danger{ background: rgba(239,68,68,.16); border-color: rgba(239,68,68,.55); }
+    .ghost{ background: rgba(255,255,255,.06); }
+
+    /* 결과 오버레이 */
+    .overlay{
+      position:fixed; inset:0; display:none; place-items:center;
+      background: rgba(0,0,0,.55);
+      padding: 20px;
+      z-index: 50;
+    }
+    .overlay .box{
+      width:min(420px, 92vw);
+      background: rgba(10,16,35,.92);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius: 22px;
+      padding: 14px;
+      text-align:center;
+      box-shadow: 0 20px 80px rgba(0,0,0,.5);
+    }
+    .overlay img{ width: min(240px, 60vw); height:auto; display:block; margin: 6px auto 10px; }
+    .overlay .msg{ font-weight: 900; font-size: 18px; margin: 6px 0 8px; }
+    .overlay .exp{ color: var(--muted); font-size: 14px; line-height: 1.35; margin: 0 0 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hud">
+      <div class="pill">스테이지: <span id="stage">1</span><small>/10</small></div>
+      <div class="pill">점수: <span id="score">0</span></div>
+    </div>
+
+    <div class="card">
+      <canvas id="game" width="480" height="520"></canvas>
+      <div class="tips">
+        ✅ 위에서 떨어지는 <b>상황(질환/오염)</b>을 보고 아래 PPE를 선택하세요. <br/>
+        ⏱️ 바닥에 닿기 전에 선택하면 유리해요!
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>🧤 PPE 선택 (여러 개 가능)</h3>
+      <div class="grid" id="ppeGrid"></div>
+      <div class="row">
+        <button class="ghost" id="clearBtn">선택 초기화</button>
+        <button class="primary" id="submitBtn">제출</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="box">
+      <img id="ovImg" alt="result" />
+      <div class="msg" id="ovMsg"></div>
+      <p class="exp" id="ovExp"></p>
+      <button class="ghost" id="nextBtn">다음</button>
+    </div>
+  </div>
+
+<script>
+/** ==========================
+ *  1) 문제(10문항) — 환경관리요원용, 짧게
+ *  ========================== */
+const QUESTIONS = [
+  { title:"결핵", desc:"결핵 의심/확진 병실 청소", need:["N95"] , explain:"결핵은 공기전파 위험 → N95(또는 동급) 권장. 청소 시 비말/분진 발생 주의."},
+  { title:"수두", desc:"수두 환자 퇴실 후 청소", need:["N95","장갑","가운"] , explain:"수두는 공기+접촉 주의가 흔히 병행 → N95 + 장갑/가운(오염 가능 시)."},
+  { title:"독감", desc:"독감 환자 병실 청소", need:["수술마스크","장갑"] , explain:"독감은 비말 위험 → 마스크 + 접촉(오염 가능) 대비 장갑."},
+  { title:"CRE", desc:"CRE 격리실 청소", need:["장갑","가운"] , explain:"CRE는 접촉전파 중심 → 장갑/가운(접촉오염 대비)."},
+  { title:"설사", desc:"설사로 변 오염(바닥/변기)", need:["장갑","가운","고글"] , explain:"분변 오염은 튐/접촉 위험 큼 → 장갑/가운 + 튐 가능 시 고글."},
+  { title:"혈액", desc:"혈액이 바닥에 튐", need:["장갑","가운","고글"] , explain:"혈액 튐 가능 → 장갑/가운 + 눈 보호(고글)."},
+  { title:"구토", desc:"구토물 오염 청소", need:["수술마스크","장갑","고글"] , explain:"구토물은 튐/비말 가능 → 마스크 + 장갑 + 고글."},
+  { title:"격리폐기물", desc:"격리의료폐기물 봉투/용기 처리", need:["장갑"] , explain:"봉투/용기 접촉 위험 → 장갑 기본."},
+  { title:"오염린넨", desc:"오염 린넨 수거/이송", need:["장갑","가운"] , explain:"린넨 접촉오염 가능 → 장갑 + 가운(오염 예상 시)."},
+  { title:"화장실", desc:"환자 화장실 청소", need:["장갑","가운"] , explain:"환경 표면 접촉 많음 → 장갑 + 가운(오염 가능 시)."}
+];
+
+/** ==========================
+ *  2) PPE 버튼 목록
+ *  ========================== */
+const PPE = [
+  { key:"수술마스크", label:"수술마스크", sub:"비말" },
+  { key:"N95", label:"N95 마스크", sub:"공기" },
+  { key:"장갑", label:"장갑", sub:"접촉" },
+  { key:"가운", label:"가운", sub:"오염/접촉" },
+  { key:"고글", label:"고글", sub:"눈 보호" },
+];
+
+/** ==========================
+ *  3) 이미지(assets 폴더)
+ *  - 너가 올린 파일 그대로 사용
+ *  ========================== */
+const IMG_IDLE = "assets/idle.png";
+const IMG_OK   = "assets/correct.png";
+const IMG_BAD  = "assets/wrong.png";
+
+/** ==========================
+ *  4) UI 렌더
+ *  ========================== */
+const ppeGrid = document.getElementById("ppeGrid");
+const selected = new Set();
+
+PPE.forEach(item=>{
+  const btn=document.createElement("button");
+  btn.innerHTML = `<span>${item.label}</span><span class="sub">${item.sub}</span>`;
+  btn.addEventListener("click", ()=>{
+    if(selected.has(item.key)) selected.delete(item.key);
+    else selected.add(item.key);
+    btn.classList.toggle("sel");
+  });
+  btn.dataset.key=item.key;
+  ppeGrid.appendChild(btn);
+});
+
+function clearSelection(){
+  selected.clear();
+  [...ppeGrid.querySelectorAll("button")].forEach(b=>b.classList.remove("sel"));
+}
+document.getElementById("clearBtn").addEventListener("click", clearSelection);
+
+/** ==========================
+ *  5) 캔버스 “낙하” 게임
+ *  ========================== */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const stageEl = document.getElementById("stage");
+const scoreEl = document.getElementById("score");
+
+let stage = 0;
+let score = 0;
+
+const idleImg = new Image(); idleImg.src = IMG_IDLE;
+
+let item = null;     // 떨어지는 문제 객체
+let lastT = 0;
+let running = true;
+
+function nextStage(){
+  clearSelection();
+  if(stage >= QUESTIONS.length){
+    showOverlay(true, "끝! 🎉", `최종 점수: ${score} / ${QUESTIONS.length}\n다시 하려면 새로고침!`, true);
+    running=false;
+    return;
+  }
+  stageEl.textContent = (stage+1);
+  item = makeFallingItem(QUESTIONS[stage]);
+  stage++;
+}
+
+function makeFallingItem(q){
+  return {
+    q,
+    x: canvas.width/2,
+    y: 70,
+    vy: 55,             // 기본 낙하 속도(px/s)
+    radius: 86,
+    startAt: performance.now(),
+  };
+}
+
+function drawRoundedRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function draw(){
+  // 배경
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // 상단 안내
+  ctx.fillStyle = "rgba(255,255,255,.10)";
+  drawRoundedRect(18, 16, canvas.width-36, 86, 18);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(234,240,255,.92)";
+  ctx.font = "900 22px system-ui";
+  ctx.fillText("상황", 34, 48);
+
+  ctx.fillStyle = "rgba(234,240,255,.70)";
+  ctx.font = "700 14px system-ui";
+  ctx.fillText("아래에서 PPE를 선택하세요", 34, 74);
+
+  // 캐릭터(작게)
+  if(idleImg.complete){
+    ctx.globalAlpha = 0.95;
+    ctx.drawImage(idleImg, canvas.width-110, 18, 88, 88);
+    ctx.globalAlpha = 1;
+  }
+
+  if(!item) return;
+
+  // 떨어지는 카드
+  const q = item.q;
+  const w = 360;
+  const h = 140;
+  const x = Math.max(18, Math.min(canvas.width-18-w, item.x - w/2));
+  const y = item.y;
+
+  ctx.fillStyle = "rgba(255,255,255,.10)";
+  drawRoundedRect(x, y, w, h, 20);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.18)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 제목
+  ctx.fillStyle = "rgba(234,240,255,.96)";
+  ctx.font = "900 34px system-ui";
+  ctx.fillText(q.title, x+22, y+58);
+
+  // 설명
+  ctx.fillStyle = "rgba(234,240,255,.75)";
+  ctx.font = "800 16px system-ui";
+  wrapText(q.desc, x+22, y+90, w-44, 20);
+
+  // 바닥 라인
+  ctx.strokeStyle="rgba(255,255,255,.10)";
+  ctx.beginPath();
+  ctx.moveTo(18, canvas.height-18);
+  ctx.lineTo(canvas.width-18, canvas.height-18);
+  ctx.stroke();
+}
+
+function wrapText(text, x, y, maxW, lh){
+  const words = text.split(" ");
+  let line = "";
+  for(let n=0;n<words.length;n++){
+    const test = line + words[n] + " ";
+    const m = ctx.measureText(test);
+    if(m.width > maxW && n>0){
+      ctx.fillText(line, x, y);
+      line = words[n] + " ";
+      y += lh;
+    }else{
+      line = test;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+function step(t){
+  if(!running){ return; }
+  if(!lastT) lastT = t;
+  const dt = (t-lastT)/1000;
+  lastT = t;
+
+  if(item){
+    // 스테이지가 뒤로 갈수록 조금 빨라짐
+    const speedUp = 1 + (stage-1)*0.10;
+    item.y += item.vy * speedUp * dt;
+
+    // 바닥 닿으면 자동 채점
+    if(item.y + 140 >= canvas.height-18){
+      judge();
+    }
+  }
+
+  draw();
+  requestAnimationFrame(step);
+}
+
+/** ==========================
+ *  6) 채점 / 결과
+ *  ========================== */
+const overlay = document.getElementById("overlay");
+const ovImg = document.getElementById("ovImg");
+const ovMsg = document.getElementById("ovMsg");
+const ovExp = document.getElementById("ovExp");
+const nextBtn = document.getElementById("nextBtn");
+
+function showOverlay(isCorrect, title, exp, isEnd=false){
+  overlay.style.display="grid";
+  ovImg.src = isCorrect ? IMG_OK : IMG_BAD;
+  ovMsg.textContent = title;
+  ovExp.textContent = exp;
+  nextBtn.textContent = isEnd ? "닫기" : "다음";
+}
+
+function hideOverlay(){
+  overlay.style.display="none";
+}
+
+function setEq(a,b){
+  if(a.size !== b.size) return false;
+  for(const v of a) if(!b.has(v)) return false;
+  return true;
+}
+
+function judge(){
+  if(!item) return;
+  const needSet = new Set(item.q.need);
+
+  // 이번 문제는 "정확히 일치"로 채점(삼성 스타일 느낌)
+  const ok = setEq(selected, needSet);
+
+  if(ok){
+    score += 1;
+    scoreEl.textContent = score;
+    showOverlay(true, "정답! +1", item.q.explain);
+  }else{
+    const needText = [...needSet].join(", ");
+    const selText = selected.size ? [...selected].join(", ") : "선택 없음";
+    showOverlay(false, "오답", `정답: ${needText}\n선택: ${selText}\n\n${item.q.explain}`);
+  }
+
+  item = null;
+}
+
+document.getElementById("submitBtn").addEventListener("click", ()=>{
+  // 제출 버튼으로도 채점
+  judge();
+});
+
+nextBtn.addEventListener("click", ()=>{
+  hideOverlay();
+  nextStage();
+});
+
+// 시작
+nextStage();
+requestAnimationFrame(step);
+</script>
+</body>
+</html>
