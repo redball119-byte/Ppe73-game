@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>환경관리담당자 보호구 교육</title>
+  <style>
+    :root{
+      --bg1:#071022;
+      --bg2:#050a14;
+      --card: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.12);
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.75);
+      --r: 22px;
+      --shadow: 0 18px 40px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      background: radial-gradient(1200px 800px at 50% 0%, rgba(255,255,255,.06), transparent 55%),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow:hidden; /* 게임 화면 고정 */
+    }
+
+    .app{
+      min-height:100dvh;
+      padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      max-width: 820px;
+      margin:0 auto;
+    }
+
+    /* ===== 상단바 (높이 줄임) ===== */
+    .topbar{
+      display:grid;
+      grid-template-columns: 1fr auto auto; /* 제목 | 문항/점수 | 재시작 */
+      gap:10px;
+      align-items:stretch;
+    }
+    .pill{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      min-height: 56px;
+    }
+    .titleBox{
+      gap:10px;
+      justify-content:flex-start;
+    }
+    .titleBox .t1{font-size:18px; font-weight:800; line-height:1.15;}
+    .titleBox .t2{font-size:12px; color:var(--muted); margin-top:2px}
+    .statBox{
+      width: 130px;
+      justify-content:center;
+      gap:8px;
+      text-align:center;
+      flex-direction:column;
+    }
+    .statBox .big{font-size:18px; font-weight:800; line-height:1}
+    .statBox .small{font-size:12px; color:var(--muted); line-height:1}
+
+    .restartBtn{
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      border: 1px solid var(--stroke);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      font-size:12px;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== 타이머 줄 ===== */
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      align-items:stretch;
+    }
+    .row .pill{min-height:52px}
+    .row .label{font-size:12px; color:var(--muted)}
+    .row .value{font-size:18px; font-weight:800}
+
+    /* ===== 게임 영역 (문제가 여기서 내려옴) ===== */
+    .arena{
+      position:relative;
+      flex: 1 1 auto;
+      min-height: 280px;
+      background: rgba(255,255,255,.03);
+      border: 1px dashed rgba(255,255,255,.18);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      padding: 16px 14px;
+    }
+    .track{
+      position:absolute;
+      top:10px; left:12px; right:12px;
+      height: 8px;
+      display:flex;
+      gap:6px;
+      opacity:.6;
+    }
+    .track span{
+      flex:1;
+      border-radius: 99px;
+      background: rgba(255,255,255,.10);
+    }
+
+    .fallItem{
+      position:absolute;
+      left: 12px;
+      right: 12px;
+      top: -80px; /* 시작은 위 */
+      display:flex;
+      justify-content:center;
+      pointer-events:none;
+    }
+    .fallBubble{
+      width: min(520px, 92%);
+      padding: 16px 18px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: var(--shadow);
+      font-weight:900;
+      font-size: clamp(18px, 3.8vw, 28px);
+      letter-spacing: -0.4px;
+      text-align:center;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* 정답/오답 이미지 오버레이 */
+    .resultOverlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,.25);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .12s ease;
+    }
+    .resultOverlay.show{opacity:1}
+    .resultOverlay img{
+      width: min(220px, 55vw);
+      height:auto;
+      filter: drop-shadow(0 10px 25px rgba(0,0,0,.55));
+    }
+
+    /* ===== 선택 버튼 영역 ===== */
+    .answers{
+      flex: 0 0 auto;
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .answersTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .answersTop .h{font-size:18px; font-weight:900}
+    .answersTop .s{font-size:12px; color:var(--muted)}
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .btn{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 16px 14px;
+      box-shadow: var(--shadow);
+      cursor:pointer;
+      text-align:center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn .b1{font-size:22px; font-weight:1000}
+    .btn .b2{font-size:13px; color:var(--muted); margin-top:6px; font-weight:700}
+
+    .hint{
+      margin-top:10px;
+      text-align:center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight:700;
+    }
+
+    /* 작은 화면 보호: 버튼이 잘리지 않게 */
+    @media (max-height: 720px){
+      .arena{min-height: 240px;}
+      .btn{padding: 14px 12px}
+      .btn .b1{font-size:20px}
+    }
+    @media (max-height: 640px){
+      .arena{min-height: 220px;}
+      .fallBubble{padding: 14px 16px;}
+      .answersTop .h{font-size:16px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- 상단 -->
+    <div class="topbar">
+      <div class="pill titleBox">
+        <div>
+          <div class="t1">🧹 환경관리담당자 보호구 교육</div>
+          <div class="t2">낙하 퀴즈</div>
+        </div>
+      </div>
+
+      <div class="pill statBox">
+        <div class="small">문항</div>
+        <div class="big"><span id="qNow">1</span>/<span id="qTotal">5</span></div>
+      </div>
+
+      <button class="restartBtn" id="restartBtn" type="button" title="재시작">
+        ↻
+      </button>
+    </div>
+
+    <!-- 상태줄 -->
+    <div class="row">
+      <div class="pill">
+        <div>
+          <div class="label">⏳ 제한시간</div>
+          <div class="value"><span id="timeLeft">5.0</span>s</div>
+        </div>
+      </div>
+      <div class="pill">
+        <div>
+          <div class="label">점수</div>
+          <div class="value"><span id="score">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 게임영역 -->
+    <div class="arena" id="arena">
+      <div class="track" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="fallItem" id="fallItem">
+        <div class="fallBubble" id="questionText">로딩…</div>
+      </div>
+
+      <div class="resultOverlay" id="resultOverlay">
+        <img id="resultImg" alt="result" src="assets/idle.png" />
+      </div>
+    </div>
+
+    <!-- 선택 -->
+    <div class="answers">
+      <div class="answersTop">
+        <div class="h">보호구 선택 (4개)</div>
+        <div class="s">한 문제당 1개만 선택</div>
+      </div>
+      <div class="grid">
+        <button class="btn" data-a="mask" type="button">
+          <div class="b1">마스크</div>
+          <div class="b2">기본(비말/분무)</div>
+        </button>
+        <button class="btn" data-a="n95" type="button">
+          <div class="b1">N95</div>
+          <div class="b2">공기(결핵 등)</div>
+        </button>
+        <button class="btn" data-a="gown" type="button">
+          <div class="b1">가운+장갑</div>
+          <div class="b2">접촉(오염물 처리)</div>
+        </button>
+        <button class="btn" data-a="none" type="button">
+          <div class="b1">보호구 불필요</div>
+          <div class="b2">위험 낮음(교육용)</div>
+        </button>
+      </div>
+      <div class="hint">선택하면 자동으로 다음 문제로 넘어갑니다.</div>
+    </div>
+  </div>
+
+<script>
+/** ====== 문제 5개(원하면 여기만 바꾸면 됨) ====== */
+const QUESTIONS = [
+  { text: "인플루엔자 환자 구역 청소", answer: "mask" },
+  { text: "결핵 의심 환자 방 청소", answer: "n95" },
+  { text: "VRE/CRE 장기 재실 병실 퇴실 후 청소", answer: "gown" },
+  { text: "혈액/체액 오염물 처리(스필)", answer: "gown" },
+  { text: "일반 복도 청소", answer: "none" },
+];
+
+document.getElementById("qTotal").textContent = QUESTIONS.length;
+
+/** ====== 상태 ====== */
+let idx = 0;
+let score = 0;
+let running = false;
+let answered = false;
+
+let startTs = 0;
+let lastFrame = 0;
+
+const fallItem = document.getElementById("fallItem");
+const questionText = document.getElementById("questionText");
+const arena = document.getElementById("arena");
+
+const timeLeftEl = document.getElementById("timeLeft");
+const scoreEl = document.getElementById("score");
+const qNowEl = document.getElementById("qNow");
+
+const overlay = document.getElementById("resultOverlay");
+const resultImg = document.getElementById("resultImg");
+
+const FALL_DURATION_MS = 5000; // 5초 동안 위->아래
+const SHOW_RESULT_MS = 650;    // 정답/오답 이미지 보여주는 시간
+
+/** ====== 유틸: 이미지 표시 ====== */
+function showResult(kind){
+  // 경로 중요: 현재 파일과 같은 폴더에 assets가 있으니 "assets/파일명.png"
+  const src = kind === "correct" ? "assets/correct.png"
+            : kind === "wrong"   ? "assets/wrong.png"
+            : "assets/idle.png";
+
+  resultImg.src = src;
+  overlay.classList.add("show");
+  setTimeout(()=> overlay.classList.remove("show"), SHOW_RESULT_MS);
+}
+
+/** ====== 문제 로드 ====== */
+function loadQuestion(){
+  const q = QUESTIONS[idx];
+  qNowEl.textContent = String(idx + 1);
+  questionText.textContent = q.text;
+
+  // 시작 위치 위로
+  fallItem.style.top = "-80px";
+  answered = false;
+
+  startTs = performance.now();
+  lastFrame = startTs;
+  running = true;
+  requestAnimationFrame(tick);
+}
+
+/** ====== 프레임: 낙하 ====== */
+function tick(ts){
+  if(!running) return;
+
+  const elapsed = ts - startTs;
+  const p = Math.min(1, elapsed / FALL_DURATION_MS); // 0~1
+  const arenaH = arena.clientHeight;
+
+  // 위(-80) -> 아래( arenaH - 120 정도 )
+  const yStart = -80;
+  const yEnd = arenaH - 120;   // 말풍선이 바닥에 걸치지 않게
+  const y = yStart + (yEnd - yStart) * p;
+
+  fallItem.style.top = y + "px";
+
+  // 남은 시간 표시
+  const left = Math.max(0, (FALL_DURATION_MS - elapsed) / 1000);
+  timeLeftEl.textContent = left.toFixed(1);
+
+  // 시간 초과 = 오답 처리 (선택 못 했으면)
+  if(p >= 1 && !answered){
+    answered = true;
+    running = false;
+    showResult("wrong");
+    setTimeout(nextQuestion, SHOW_RESULT_MS);
+    return;
+  }
+
+  requestAnimationFrame(tick);
+}
+
+/** ====== 답안 선택 ====== */
+function choose(ans){
+  if(answered) return;
+  answered = true;
+  running = false;
+
+  const correct = QUESTIONS[idx].answer === ans;
+  if(correct) score += 1;
+
+  scoreEl.textContent = String(score);
+  showResult(correct ? "correct" : "wrong");
+
+  setTimeout(nextQuestion, SHOW_RESULT_MS);
+}
+
+function nextQuestion(){
+  idx += 1;
+  if(idx >= QUESTIONS.length){
+    // 끝
+    questionText.textContent = `끝! 점수: ${score}/${QUESTIONS.length}`;
+    fallItem.style.top = "42%";
+    timeLeftEl.textContent = "0.0";
+    return;
+  }
+  loadQuestion();
+}
+
+/** ====== 재시작 ====== */
+function restart(){
+  idx = 0;
+  score = 0;
+  scoreEl.textContent = "0";
+  timeLeftEl.textContent = "5.0";
+  showResult("idle");
+  loadQuestion();
+}
+
+document.querySelectorAll(".btn").forEach(btn=>{
+  btn.addEventListener("click", ()=> choose(btn.dataset.a));
+});
+
+document.getElementById("restartBtn").addEventListener("click", restart);
+
+/** 시작 */
+restart();
+</script>
+</body>
+</html>
