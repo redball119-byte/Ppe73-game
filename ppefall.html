@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>환경관리 PPE 낙하 게임</title>
+  <style>
+    :root{
+      --bg:#071022;
+      --card:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.12);
+      --text:#eaf0ff;
+      --muted:rgba(234,240,255,.75);
+      --good:#22c55e;
+      --bad:#ef4444;
+      --btn:rgba(255,255,255,.10);
+      --btnOn:rgba(34,197,94,.22);
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      background:radial-gradient(1000px 600px at 50% -10%, rgba(255,255,255,.10), transparent 60%), var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      overflow:hidden;
+      height:100vh;
+    }
+    #hud{
+      position:fixed; left:0; top:0; right:0;
+      padding:14px 14px 10px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      z-index:10;
+    }
+    .pill{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:10px 12px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      font-weight:700;
+      letter-spacing:-.2px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .sub{
+      font-weight:600;
+      color:var(--muted);
+      font-size:13px;
+    }
+    #question{
+      position:fixed;
+      left:14px; right:14px;
+      top:62px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:12px 14px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index:10;
+    }
+    #question .title{
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:-.3px;
+      margin-bottom:6px;
+    }
+    #question .hint{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    #game{
+      position:relative;
+      width:100vw;
+      height:100vh;
+    }
+
+    /* 떨어지는 아이템(글씨 카드) */
+    .item{
+      position:absolute;
+      min-width:92px;
+      padding:12px 12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      text-align:center;
+      font-weight:900;
+      letter-spacing:-.3px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      user-select:none;
+      touch-action:none;
+    }
+    .item .small{
+      display:block;
+      margin-top:4px;
+      font-size:12px;
+      font-weight:700;
+      color:rgba(234,240,255,.78);
+    }
+
+    /* 캐처(플레이어) */
+    #catcher{
+      position:absolute;
+      bottom:82px;
+      left:50%;
+      transform:translateX(-50%);
+      width:84px;
+      height:84px;
+      border-radius:24px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:40px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      z-index:5;
+    }
+
+    /* 하단 컨트롤 */
+    #controls{
+      position:fixed; left:0; right:0; bottom:0;
+      padding:14px 14px calc(14px + env(safe-area-inset-bottom));
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      z-index:10;
+    }
+    .btn{
+      flex:1;
+      max-width:240px;
+      background:var(--btn);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      border-radius:16px;
+      padding:14px 12px;
+      font-weight:900;
+      text-align:center;
+      user-select:none;
+    }
+    .btn:active{ transform:scale(.98); }
+    .btn.start{ background:rgba(34,197,94,.20); border-color:rgba(34,197,94,.35); }
+    .btn.reset{ background:rgba(255,255,255,.08); }
+
+    /* 피드백 토스트 */
+    #toast{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:150px;
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:900;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.14);
+      opacity:0;
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:20;
+      pointer-events:none;
+      white-space:nowrap;
+    }
+    #toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-6px);
+    }
+    .good{ color:var(--good); }
+    .bad{ color:var(--bad); }
+
+    /* 작은 화면 글자 조금 키우기 */
+    @media (max-width:360px){
+      .item{ min-width:86px; padding:10px 10px; }
+      #catcher{ width:76px; height:76px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="hud">
+    <div class="pill">🧹 환경관리 PPE 선택</div>
+    <div class="pill">
+      <span>점수:</span>
+      <span id="score">0</span>
+    </div>
+  </div>
+
+  <div id="question">
+    <div class="title">오늘의 목표 PPE: <span id="targetName">장갑</span></div>
+    <div class="hint">아래로 떨어지는 PPE 중 <b>목표 PPE</b>만 받아주세요. (기본 보호구 4종)</div>
+  </div>
+
+  <div id="game">
+    <div id="catcher" aria-label="catcher">🙂</div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="controls">
+    <div class="btn start" id="btnStart">시작</div>
+    <div class="btn reset" id="btnReset">리셋</div>
+  </div>
+
+<script>
+(() => {
+  // ✅ 환경관리요원 기본 PPE 4종 (글씨로만)
+  const PPE = [
+    { key:'glove',  name:'장갑',         sub:'체액/오염 접촉' },
+    { key:'gown',   name:'가운/앞치마',  sub:'오염·튀김 예방' },
+    { key:'mask',   name:'마스크',       sub:'비말/분무' },
+    { key:'goggle', name:'고글/안면보호', sub:'눈·얼굴 튐' },
+  ];
+
+  const game = document.getElementById('game');
+  const catcher = document.getElementById('catcher');
+  const scoreEl = document.getElementById('score');
+  const targetNameEl = document.getElementById('targetName');
+  const toast = document.getElementById('toast');
+  const btnStart = document.getElementById('btnStart');
+  const btnReset = document.getElementById('btnReset');
+
+  let running = false;
+  let score = 0;
+
+  // catcher 위치
+  let catcherX = window.innerWidth / 2;
+  const catcherW = () => catcher.getBoundingClientRect().width;
+  const catcherH = () => catcher.getBoundingClientRect().height;
+
+  // 목표 PPE
+  let target = PPE[0];
+
+  // 떨어지는 아이템 관리
+  const items = new Set();
+  let spawnTimer = 0;
+  let lastTs = 0;
+
+  function pickTarget(){
+    target = PPE[Math.floor(Math.random() * PPE.length)];
+    targetNameEl.textContent = target.name;
+  }
+
+  function setScore(v){
+    score = v;
+    scoreEl.textContent = score;
+  }
+
+  function showToast(text, ok){
+    toast.textContent = text;
+    toast.className = (ok ? 'good' : 'bad');
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 650);
+  }
+
+  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+  function placeCatcher(){
+    const x = clamp(catcherX - catcherW()/2, 10, window.innerWidth - catcherW() - 10);
+    catcher.style.left = (x + catcherW()/2) + 'px';
+  }
+
+  function spawnItem(){
+    const p = PPE[Math.floor(Math.random() * PPE.length)];
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.dataset.key = p.key;
+    el.innerHTML = `${p.name}<span class="small">${p.sub}</span>`;
+
+    const w = 100 + Math.floor(Math.random()*60);
+    el.style.minWidth = w + 'px';
+
+    const x = 10 + Math.random() * (window.innerWidth - w - 20);
+    el.style.left = x + 'px';
+    el.style.top = (110) + 'px';
+
+    // 속도 (모바일용: 너무 빠르지 않게)
+    const speed = 120 + Math.random() * 120; // px/s
+
+    game.appendChild(el);
+    items.add({ el, x, y:110, w, h:0, speed, key:p.key });
+  }
+
+  function rectsOverlap(a, b){
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  }
+
+  function step(ts){
+    if(!running) return;
+    const dt = Math.min(0.05, (ts - lastTs) / 1000 || 0);
+    lastTs = ts;
+
+    // 스폰: 초당 1~2개 정도
+    spawnTimer += dt;
+    if(spawnTimer > 0.6){
+      spawnTimer = 0;
+      spawnItem();
+      // 가끔 목표 바꾸기 (헷갈리지 않게 자주 안 바꿈)
+      if(Math.random() < 0.12) pickTarget();
+    }
+
+    // catcher 위치 업데이트
+    placeCatcher();
+    const cRect = catcher.getBoundingClientRect();
+
+    // 아이템 이동 + 충돌 체크
+    for(const it of Array.from(items)){
+      it.y += it.speed * dt;
+      it.el.style.top = it.y + 'px';
+
+      const r = it.el.getBoundingClientRect();
+      const hit = rectsOverlap(r, cRect);
+
+      // 바닥 지나가면 제거
+      if(it.y > window.innerHeight + 120){
+        it.el.remove();
+        items.delete(it);
+        continue;
+      }
+
+      if(hit){
+        const correct = (it.key === target.key);
+        if(correct){
+          setScore(score + 1);
+          showToast(`정답 +1 (${target.name})`, true);
+        }else{
+          // 음수로 너무 내려가는 거 방지
+          setScore(Math.max(0, score - 1));
+          showToast(`오답 -1 (목표: ${target.name})`, false);
+        }
+        it.el.remove();
+        items.delete(it);
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  // 조작: 드래그 / 터치
+  let dragging = false;
+
+  function onMove(clientX){
+    catcherX = clientX;
+    placeCatcher();
+  }
+
+  catcher.addEventListener('pointerdown', (e)=>{
+    dragging = true;
+    catcher.setPointerCapture(e.pointerId);
+  });
+  window.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    onMove(e.clientX);
+  });
+  window.addEventListener('pointerup', ()=>{
+    dragging = false;
+  });
+
+  // 화면 아무 곳 드래그해도 이동되게 (편함)
+  game.addEventListener('pointerdown', (e)=>{ dragging = true; onMove(e.clientX); });
+  game.addEventListener('pointermove', (e)=>{ if(dragging) onMove(e.clientX); });
+  game.addEventListener('pointerup', ()=>{ dragging = false; });
+
+  // 버튼
+  btnStart.addEventListener('click', ()=>{
+    if(running) return;
+    setScore(0);
+    pickTarget();
+    running = true;
+    lastTs = 0;
+    showToast('시작!', true);
+    requestAnimationFrame(step);
+  });
+
+  btnReset.addEventListener('click', ()=>{
+    running = false;
+    setScore(0);
+    pickTarget();
+    for(const it of Array.from(items)){
+      it.el.remove();
+      items.delete(it);
+    }
+    showToast('리셋 완료', true);
+  });
+
+  // 초기 위치
+  pickTarget();
+  placeCatcher();
+
+  window.addEventListener('resize', placeCatcher);
+})();
+</script>
+</body>
+</html>
