@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>73병동 PPE 교육게임</title>
+
+<style>
+body{
+margin:0;
+background:#0b1020;
+font-family:pretendard;
+color:white;
+text-align:center;
+overflow:hidden;
+}
+
+#start{
+position:absolute;
+top:40%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#22c55e;
+padding:20px 40px;
+border-radius:20px;
+font-size:28px;
+font-weight:bold;
+cursor:pointer;
+}
+
+#game{
+display:none;
+}
+
+.player{
+position:fixed;
+bottom:10px;
+left:50%;
+transform:translateX(-50%);
+width:120px;
+}
+
+.fall{
+position:absolute;
+width:90px;
+animation:fall linear forwards;
+}
+
+@keyframes fall{
+0%{top:-100px}
+100%{top:100vh}
+}
+
+#score{
+position:fixed;
+top:20px;
+right:20px;
+font-size:24px;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div id="start">🎮 PPE 교육 시작</div>
+
+<div id="game">
+<div id="score">점수: 0</div>
+<img src="assets/idle.png" class="player" id="player">
+</div>
+
+<script>
+let score=0;
+
+document.getElementById("start").onclick=()=>{
+document.getElementById("start").style.display="none";
+document.getElementById("game").style.display="block";
+startGame();
+}
+
+function startGame(){
+setInterval(()=>{
+let img=document.createElement("img");
+img.src="assets/correct.png"; 
+img.className="fall";
+img.style.left=Math.random()*80+"%";
+img.style.animationDuration=3+Math.random()*2+"s";
+
+img.onclick=()=>{
+score++;
+document.getElementById("score").innerText="점수: "+score;
+img.remove();
+}
+
+document.body.appendChild(img);
+
+setTimeout(()=>img.remove(),5000);
+},900);
+}
+</script>
+
+</body>
+</html>
