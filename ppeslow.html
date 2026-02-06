@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PPE 선택 퀴즈 (느린버전)</title>
+  <style>
+    :root{
+      --bg:#071022;
+      --card:rgba(255,255,255,.06);
+      --card2:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.10);
+      --text:#eaf0ff;
+      --muted:rgba(234,240,255,.68);
+      --good:#22c55e;
+      --bad:#ef4444;
+      --accent:#60a5fa;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(900px 700px at 50% -150px, rgba(96,165,250,.25), transparent 60%),
+                  radial-gradient(900px 700px at 50% 120%, rgba(34,197,94,.12), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      overflow:hidden;
+    }
+
+    .wrap{
+      width:100vw;
+      height:100vh;
+      padding: 18px 16px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .top{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 12px 14px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border:1px solid var(--stroke);
+      box-shadow: 0 10px 25px rgba(0,0,0,.22);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      font-weight: 800;
+      letter-spacing: -.2px;
+    }
+    .pill small{font-weight:700; color:var(--muted)}
+    .score{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border:1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 14px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .title{
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing:-.4px;
+      margin: 2px 0 6px;
+    }
+    .desc{
+      margin:0;
+      color:var(--muted);
+      line-height:1.35;
+      font-weight:650;
+      font-size: 14px;
+    }
+    .metaRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.18);
+      border:1px solid var(--stroke);
+      color: var(--muted);
+      font-weight:800;
+      font-size: 13px;
+    }
+    .tag strong{color:var(--text)}
+
+    /* Game area */
+    .game{
+      flex:1;
+      min-height: 360px;
+      position:relative;
+      border-radius: var(--radius);
+      background: radial-gradient(600px 420px at 50% 20%, rgba(255,255,255,.06), transparent 60%),
+                  rgba(0,0,0,.10);
+      border:1px solid var(--stroke);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+      overflow:hidden;
+    }
+    .laneHint{
+      position:absolute;
+      left:0; right:0; top:0; bottom:0;
+      pointer-events:none;
+      background:
+        linear-gradient(90deg, transparent 0%, rgba(255,255,255,.05) 50%, transparent 100%);
+      opacity:.06;
+    }
+    .slot{
+      position:absolute;
+      left:50%;
+      top: 52%;
+      transform: translate(-50%, -50%);
+      width: min(92vw, 420px);
+      height: 150px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.14);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      text-align:center;
+      color: rgba(234,240,255,.45);
+      font-weight: 900;
+      letter-spacing:-.3px;
+    }
+    .falling{
+      position:absolute;
+      left:50%;
+      top:-120px;
+      transform: translateX(-50%);
+      width: min(92vw, 420px);
+      padding: 14px 14px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(96,165,250,.20), rgba(255,255,255,.06));
+      border:1px solid rgba(96,165,250,.28);
+      box-shadow: 0 22px 55px rgba(0,0,0,.40);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      text-align:left;
+    }
+    .falling .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      background: rgba(0,0,0,.20);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight:900;
+      color: rgba(234,240,255,.90);
+      font-size: 13px;
+      margin-bottom:10px;
+    }
+    .falling .disease{
+      font-size: 22px;
+      font-weight: 950;
+      letter-spacing: -.5px;
+      margin:0 0 6px;
+      line-height:1.15;
+    }
+    .falling .note{
+      margin:0;
+      color: rgba(234,240,255,.72);
+      font-weight: 750;
+      font-size: 14px;
+      line-height:1.25;
+    }
+    .timer{
+      position:absolute;
+      right:14px;
+      top:14px;
+      padding: 10px 12px;
+      border-radius:999px;
+      background: rgba(0,0,0,.22);
+      border:1px solid var(--stroke);
+      font-weight: 950;
+      letter-spacing: -.3px;
+    }
+    .timer small{font-weight:900; color: var(--muted)}
+
+    /* Options */
+    .options{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn{
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      border-radius: 18px;
+      padding: 14px 12px;
+      color: var(--text);
+      text-align:left;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      box-shadow: 0 12px 30px rgba(0,0,0,.22);
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-weight: 950;
+    }
+    .btn .icon{
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.10);
+      font-size: 22px;
+    }
+    .btn .txt{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .btn .txt small{
+      color: var(--muted);
+      font-weight: 850;
+    }
+    .btn:active{ transform: scale(.99); }
+
+    /* Feedback modal */
+    .overlay{
+      position:absolute;
+      inset:0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .modal{
+      width: min(92vw, 420px);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 28px 90px rgba(0,0,0,.55);
+      padding: 16px 16px 14px;
+      text-align:center;
+    }
+    .modal h2{
+      margin: 2px 0 6px;
+      font-size: 22px;
+      letter-spacing:-.5px;
+      font-weight: 1000;
+    }
+    .modal p{
+      margin:0 0 12px;
+      color: var(--muted);
+      font-weight: 800;
+      line-height:1.35;
+    }
+    .modal .row{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      margin-top: 10px;
+    }
+    .primary{
+      flex:1;
+      border:none;
+      border-radius: 16px;
+      padding: 13px 14px;
+      background: rgba(34,197,94,.18);
+      color: #eafff0;
+      border:1px solid rgba(34,197,94,.35);
+      font-weight: 950;
+      cursor:pointer;
+    }
+    .ghost{
+      flex:1;
+      border-radius: 16px;
+      padding: 13px 14px;
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border:1px solid rgba(255,255,255,.12);
+      font-weight: 950;
+      cursor:pointer;
+    }
+
+    .footerRow{
+      display:flex;
+      gap:10px;
+    }
+    .bigBtn{
+      flex:1;
+      border-radius: 18px;
+      padding: 14px 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font-weight: 950;
+      letter-spacing:-.2px;
+      cursor:pointer;
+      box-shadow: 0 12px 28px rgba(0,0,0,.22);
+    }
+    .bigBtn.start{
+      background: rgba(96,165,250,.16);
+      border:1px solid rgba(96,165,250,.35);
+    }
+    .bigBtn.reset{
+      background: rgba(255,255,255,.05);
+    }
+    .hint{
+      text-align:center;
+      color: rgba(234,240,255,.55);
+      font-weight: 800;
+      font-size: 12px;
+      margin-top: -4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="pill">🧹 환경관리 PPE 퀴즈 <small>느린버전</small></div>
+      <div class="score">
+        <div class="pill">문항 <span id="qNow">0</span>/<span id="qTotal">10</span></div>
+        <div class="pill">점수 <span id="score">0</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title">질병/상황을 보고 <span style="color:var(--accent)">기본 보호구 1개</span>를 고르세요</div>
+      <p class="desc">질병명이 위에서 “떨어져서” 중앙에 멈춥니다. 아래 4개 중 정답 1개를 누르면 다음 문항으로 넘어갑니다. (총 10문항)</p>
+      <div class="metaRow">
+        <div class="tag">⏱️ 제한시간 <strong><span id="timeLimit">6</span>초</strong></div>
+        <div class="tag">🐢 속도 <strong>느림</strong></div>
+        <div class="tag">🎯 대상 <strong>환경관리요원</strong></div>
+      </div>
+    </div>
+
+    <div class="game" id="game">
+      <div class="laneHint"></div>
+      <div class="timer" id="timer">⏳ <span id="tLeft">6.0</span><small>s</small></div>
+
+      <div class="slot" id="slot">시작을 누르면<br/>질병명이 떨어집니다</div>
+      <div class="falling" id="falling" aria-hidden="true" style="display:none;">
+        <div class="kicker" id="kicker">🦠 감염병/상황</div>
+        <div class="disease" id="diseaseTitle">-</div>
+        <p class="note" id="diseaseNote">-</p>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <div class="modal" id="modal">
+          <h2 id="resultTitle">정답</h2>
+          <p id="resultBody">-</p>
+          <div class="row">
+            <button class="ghost" id="againBtn">다시</button>
+            <button class="primary" id="nextBtn">다음</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title" style="font-size:18px;margin-bottom:10px;">보호구 선택 (4개)</div>
+      <div class="options" id="options"></div>
+      <div class="footerRow" style="margin-top:12px;">
+        <button class="bigBtn start" id="startBtn">시작</button>
+        <button class="bigBtn reset" id="resetBtn">리셋</button>
+      </div>
+      <div class="hint">팁: “시간이 너무 빠르면” 아래 코드에서 <b>제한시간(초)</b>를 7~8로 올리면 됩니다.</div>
+    </div>
+  </div>
+
+  <script>
+    // ====== 설정(느린버전) ======
+    const TOTAL = 10;
+    const TIME_LIMIT = 6.0;      // 문항 제한시간(초) — 더 느리게 하려면 7~8로
+    const FALL_DURATION = 2400;  // 질병명 떨어지는 애니메이션(ms) — 더 느리게 하려면 2800~3200
+
+    // 환경관리요원용 "기본 보호구" 4개(원하면 이름만 바꿔도 됨)
+    const PPE = [
+      { id:"mask",  label:"수술마스크", sub:"비말/분무", icon:"😷" },
+      { id:"n95",   label:"N95(호흡보호)", sub:"공기/에어로졸", icon:"🫁" },
+      { id:"gown",  label:"가운/앞치마", sub:"오염·튀김", icon:"🥼" },
+      { id:"eye",   label:"고글/안면보호", sub:"눈·얼굴 튐", icon:"🥽" },
+    ];
+
+    // 10문항(원하는 대로 문구 짧게 구성)
+    // answer: PPE id 중 하나
+    const QUESTIONS = [
+      { title:"결핵 의심 (기침·객담)", note:"공기 전파 가능", kicker:"🦠 공기주의 상황", answer:"n95" },
+      { title:"구토/설사로 화장실 오염", note:"오염 접촉 위험", kicker:"🧻 접촉오염 상황", answer:"gown" },
+      { title:"혈액/체액 튐 가능 작업", note:"눈·얼굴 보호 필요", kicker:"💦 튐/비말 상황", answer:"eye" },
+      { title:"침·분비물 많은 환자 주변 청소", note:"비말 노출 가능", kicker:"💧 비말 상황", answer:"mask" },
+      { title:"에어로졸 발생 가능한 처치실 청소", note:"미세입자 노출", kicker:"🌬️ 에어로졸 상황", answer:"n95" },
+      { title:"침대난간·손잡이 집중 소독", note:"표면 오염 접촉", kicker:"🧼 표면 접촉 상황", answer:"gown" },
+      { title:"분무 소독(스프레이) 사용", note:"눈/얼굴 튐 주의", kicker:"🧴 분무 상황", answer:"eye" },
+      { title:"감염병 의심 병실 출입", note:"기본 비말 예방", kicker:"🚪 병실 출입", answer:"mask" },
+      { title:"대변/오물 처리 동반 청소", note:"오염·튀김 위험", kicker:"🪣 오물 처리", answer:"gown" },
+      { title:"환자 근접 작업(기침 잦음)", note:"비말 노출 가능", kicker:"😮‍💨 비말 상황", answer:"mask" },
+    ];
+
+    // ====== 상태 ======
+    let qIndex = 0;
+    let score = 0;
+    let running = false;
+    let timerHandle = null;
+    let tStart = 0;
+
+    const elQNow = document.getElementById("qNow");
+    const elQTotal = document.getElementById("qTotal");
+    const elScore = document.getElementById("score");
+    const elTimeLimit = document.getElementById("timeLimit");
+
+    const game = document.getElementById("game");
+    const slot = document.getElementById("slot");
+    const falling = document.getElementById("falling");
+    const kicker = document.getElementById("kicker");
+    const diseaseTitle = document.getElementById("diseaseTitle");
+    const diseaseNote = document.getElementById("diseaseNote");
+
+    const overlay = document.getElementById("overlay");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultBody = document.getElementById("resultBody");
+    const nextBtn = document.getElementById("nextBtn");
+    const againBtn = document.getElementById("againBtn");
+
+    const options = document.getElementById("options");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const tLeftEl = document.getElementById("tLeft");
+
+    elQTotal.textContent = TOTAL;
+    elTimeLimit.textContent = TIME_LIMIT.toFixed(0);
+
+    // ====== 버튼 생성 ======
+    function renderOptions(){
+      options.innerHTML = "";
+      PPE.forEach(p => {
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.innerHTML = `
+          <div class="icon">${p.icon}</div>
+          <div class="txt">
+            <div>${p.label}</div>
+            <small>${p.sub}</small>
+          </div>
+        `;
+        btn.addEventListener("click", () => {
+          if(!running) return;
+          answer(p.id);
+        }, {passive:true});
+        options.appendChild(btn);
+      });
+    }
+    renderOptions();
+
+    // ====== 게임 로직 ======
+    function startGame(){
+      score = 0;
+      qIndex = 0;
+      updateHUD();
+      overlay.style.display = "none";
+      slot.innerHTML = "질병명이 떨어집니다…";
+      startRound();
+    }
+
+    function resetGame(){
+      running = false;
+      clearTimer();
+      overlay.style.display = "none";
+      falling.style.display = "none";
+      slot.innerHTML = "시작을 누르면<br/>질병명이 떨어집니다";
+      qIndex = 0;
+      score = 0;
+      updateHUD();
+      tLeftEl.textContent = TIME_LIMIT.toFixed(1);
+    }
+
+    function updateHUD(){
+      elQNow.textContent = Math.min(qIndex, TOTAL);
+      elScore.textContent = score;
+    }
+
+    function clearTimer(){
+      if(timerHandle){
+        cancelAnimationFrame(timerHandle);
+        timerHandle = null;
+      }
+    }
+
+    function startRound(){
+      if(qIndex >= TOTAL){
+        finish();
+        return;
+      }
+      running = true;
+      overlay.style.display = "none";
+      falling.style.display = "block";
+
+      const q = QUESTIONS[qIndex];
+
+      kicker.textContent = q.kicker;
+      diseaseTitle.textContent = q.title;
+      diseaseNote.textContent = q.note;
+
+      // Falling animation: 위에서 떨어져서 slot 위치에 멈춤
+      const slotRect = slot.getBoundingClientRect();
+      const gameRect = game.getBoundingClientRect();
+      const targetTop = (slotRect.top - gameRect.top) + 8; // 약간 위로
+      falling.style.top = (-140) + "px";
+      falling.style.transition = "none";
+
+      // 강제 리플로우
+      void falling.offsetHeight;
+
+      // 애니메이션 시작
+      requestAnimationFrame(() => {
+        falling.style.transition = `top ${FALL_DURATION}ms cubic-bezier(.18,.84,.25,1)`;
+        falling.style.top = (targetTop) + "px";
+      });
+
+      // 타이머 시작(느리게)
+      tStart = performance.now();
+      tick();
+    }
+
+    function tick(){
+      const now = performance.now();
+      const elapsed = (now - tStart) / 1000;
+      const left = Math.max(0, TIME_LIMIT - elapsed);
+      tLeftEl.textContent = left.toFixed(1);
+
+      if(left <= 0){
+        running = false;
+        showResult(false, "시간 초과!", `정답은 <b>${ppeLabel(QUESTIONS[qIndex].answer)}</b> 입니다.`);
+        return;
+      }
+      timerHandle = requestAnimationFrame(tick);
+    }
+
+    function ppeLabel(id){
+      const p = PPE.find(x=>x.id===id);
+      return p ? p.label : id;
+    }
+
+    function answer(choice){
+      running = false;
+      clearTimer();
+
+      const q = QUESTIONS[qIndex];
+      const ok = (choice === q.answer);
+
+      if(ok){
+        score += 1;
+        showResult(true, "정답 ✅", `선택: <b>${ppeLabel(choice)}</b><br/>설명: ${q.note}`);
+      }else{
+        score -= 1;
+        showResult(false, "오답 ❌", `선택: <b>${ppeLabel(choice)}</b><br/>정답: <b>${ppeLabel(q.answer)}</b>`);
+      }
+      updateHUD();
+    }
+
+    function showResult(ok, title, bodyHtml){
+      overlay.style.display = "flex";
+      resultTitle.textContent = title;
+      resultTitle.style.color = ok ? "var(--good)" : "var(--bad)";
+      resultBody.innerHTML = bodyHtml;
+    }
+
+    function next(){
+      overlay.style.display = "none";
+      qIndex += 1;
+      updateHUD();
+
+      // 다음 라운드 준비
+      falling.style.display = "none";
+      slot.innerHTML = "다음 질병명이 떨어집니다…";
+      tLeftEl.textContent = TIME_LIMIT.toFixed(1);
+
+      // 잠깐 쉬고 시작(느린 템포)
+      setTimeout(() => startRound(), 450);
+    }
+
+    function retry(){
+      overlay.style.display = "none";
+      // 같은 문제 다시
+      falling.style.display = "none";
+      slot.innerHTML = "다시 떨어집니다…";
+      tLeftEl.textContent = TIME_LIMIT.toFixed(1);
+      setTimeout(() => startRound(), 450);
+    }
+
+    function finish(){
+      running = false;
+      clearTimer();
+      falling.style.display = "none";
+      overlay.style.display = "flex";
+      resultTitle.textContent = "완료 🎉";
+      resultTitle.style.color = "var(--accent)";
+      resultBody.innerHTML = `총 <b>${TOTAL}</b>문항 완료!<br/>최종 점수: <b>${score}</b><br/><span style="color:rgba(234,240,255,.75);font-weight:800;">리셋을 누르면 다시 시작할 수 있어요.</span>`;
+      nextBtn.textContent = "처음으로";
+      againBtn.style.display = "none";
+    }
+
+    // ====== 이벤트 ======
+    startBtn.addEventListener("click", () => {
+      nextBtn.textContent = "다음";
+      againBtn.style.display = "inline-block";
+      startGame();
+    }, {passive:true});
+
+    resetBtn.addEventListener("click", () => resetGame(), {passive:true});
+
+    nextBtn.addEventListener("click", () => {
+      if(qIndex >= TOTAL){
+        // 완료 후 "처음으로"
+        againBtn.style.display = "inline-block";
+        nextBtn.textContent = "다음";
+        resetGame();
+      }else{
+        next();
+      }
+    }, {passive:true});
+
+    againBtn.addEventListener("click", () => retry(), {passive:true});
+
+    // 초기화
+    resetGame();
+  </script>
+</body>
+</html>
