@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>환경관리 PPE 퀴즈 (느린버전)</title>
+  <style>
+    body{
+      margin:0;
+      background:#071022;
+      color:#fff;
+      font-family: Arial, sans-serif;
+    }
+    .wrap{
+      padding:16px;
+      max-width:520px;
+      margin:0 auto;
+    }
+    .card{
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
+      padding:16px;
+      margin-bottom:14px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .top{
+      display:flex;
+      gap:10px;
+      align-items:stretch;
+    }
+    .pill{
+      flex:1;
+      text-align:center;
+      padding:14px 10px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      font-weight:800;
+    }
+    .title{
+      font-size:22px;
+      font-weight:900;
+      line-height:1.2;
+    }
+    .sub{
+      margin-top:8px;
+      color:rgba(255,255,255,.7);
+      font-size:14px;
+      line-height:1.4;
+    }
+
+    /* 중앙 떨어지는 영역 */
+    #stage{
+      height:360px;
+      position:relative;
+      overflow:hidden;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.03);
+    }
+    #falling{
+      position:absolute;
+      top:-40px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:42px;
+      font-weight:900;
+      opacity:.95;
+      white-space:nowrap;
+    }
+
+    /* 아래 선택 버튼 */
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .btn{
+      padding:14px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      font-size:16px;
+      font-weight:900;
+    }
+    .btn small{
+      display:block;
+      margin-top:4px;
+      font-weight:700;
+      font-size:12px;
+      color:rgba(255,255,255,.7);
+    }
+
+    /* 시작/리셋 버튼은 화면 아래에 고정 */
+    .fixedBar{
+      position:fixed;
+      left:16px;
+      right:16px;
+      bottom:18px;
+      display:flex;
+      gap:12px;
+      z-index:9999;
+    }
+    .fixedBar button{
+      flex:1;
+      padding:16px 14px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.10);
+      color:#fff;
+      font-size:18px;
+      font-weight:900;
+    }
+    #startBtn{
+      background:rgba(34,197,94,.18);
+      border-color:rgba(34,197,94,.45);
+    }
+    #resetBtn{
+      background:rgba(239,68,68,.16);
+      border-color:rgba(239,68,68,.40);
+    }
+
+    /* 버튼 때문에 아래 가려지지 않게 */
+    .bottomSpace{ height:96px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="top">
+      <div class="pill">🧹 환경관리 PPE 퀴즈<br><span style="opacity:.7;font-weight:800;">느린버전</span></div>
+      <div class="pill">문항<br><span id="q">0</span> / 10</div>
+      <div class="pill">점수<br><span id="score">0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="title">질병명이 떨어집니다</div>
+      <div class="sub">아래 보호구 4개 중 <b>정답 1개</b>를 눌러주세요. (환경관리요원 교육용)</div>
+    </div>
+
+    <div class="card">
+      <div id="stage">
+        <div id="falling" style="display:none;">결핵</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="title" style="font-size:18px;">보호구 선택 (4개)</div>
+      <div class="grid" style="margin-top:10px;">
+        <button class="btn" data-ppe="mask">마스크<small>비말/분무</small></button>
+        <button class="btn" data-ppe="gloves">장갑<small>접촉/체액</small></button>
+        <button class="btn" data-ppe="gown">가운/앞치마<small>오염/튀김</small></button>
+        <button class="btn" data-ppe="goggles">고글/안면보호<small>눈/얼굴</small></button>
+      </div>
+    </div>
+
+    <div class="bottomSpace"></div>
+  </div>
+
+  <div class="fixedBar">
+    <button id="startBtn" type="button">시작</button>
+    <button id="resetBtn" type="button">리셋</button>
+  </div>
+
+  <script>
+    // ✅ 10문항, "질병명" 떨어지고 → 정답 PPE 1개 선택
+    const questions = [
+      { disease:"결핵", answer:"mask" },
+      { disease:"인플루엔자", answer:"mask" },
+      { disease:"노로바이러스(구토물)", answer:"gown" },
+      { disease:"혈액/체액 오염(침대난간)", answer:"gloves" },
+      { disease:"C. difficile 의심(설사)", answer:"gloves" },
+      { disease:"객담/분무 많은 청소", answer:"goggles" },
+      { disease:"수술실 바닥 혈액 소량", answer:"gloves" },
+      { disease:"격리병실 화장실 청소", answer:"gown" },
+      { disease:"세정제 분사(눈 튐 위험)", answer:"goggles" },
+      { disease:"환자 침상 주변 청소", answer:"gloves" },
+    ];
+
+    let idx = 0;
+    let score = 0;
+    let running = false;
+    let y = -40;
+    let speed = 1.2; // ✅ 느린 속도
+
+    const qEl = document.getElementById('q');
+    const sEl = document.getElementById('score');
+    const falling = document.getElementById('falling');
+    const stage = document.getElementById('stage');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function loadQuestion(){
+      if(idx >= questions.length){
+        running = false;
+        falling.style.display = "none";
+        alert("끝! 점수: " + score + " / " + questions.length);
+        return;
+      }
+      qEl.textContent = idx;
+      falling.textContent = questions[idx].disease;
+      y = -40;
+      falling.style.top = y + "px";
+      falling.style.display = "block";
+    }
+
+    let timer = null;
+    function tick(){
+      if(!running) return;
+      y += speed;
+      falling.style.top = y + "px";
+
+      // 바닥 닿으면 오답 처리 후 다음
+      if(y > stage.clientHeight - 60){
+        score -= 1;
+        sEl.textContent = score;
+        idx += 1;
+        loadQuestion();
+      }
+    }
+
+    startBtn.addEventListener('click', () => {
+      if(running) return;
+      running = true;
+      if(idx === 0) loadQuestion();
+      if(!timer) timer = setInterval(tick, 16);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      running = false;
+      idx = 0;
+      score = 0;
+      qEl.textContent = 0;
+      sEl.textContent = 0;
+      falling.style.display = "none";
+    });
+
+    document.querySelectorAll('.btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        if(!running) return; // 시작 안 했으면 선택 불가
+        const pick = btn.dataset.ppe;
+        const ans = questions[idx].answer;
+        if(pick === ans){
+          score += 1;
+        }else{
+          score -= 1;
+        }
+        sEl.textContent = score;
+        idx += 1;
+        loadQuestion();
+      });
+    });
+  </script>
+</body>
+</html>
