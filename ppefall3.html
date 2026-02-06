@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>환경관리 PPE 교육 게임</title>
+
+<style>
+body{
+margin:0;
+background:#071022;
+color:white;
+font-family:'Pretendard',sans-serif;
+text-align:center;
+}
+
+/* 상단 */
+.header{
+display:flex;
+justify-content:space-between;
+padding:12px;
+font-size:14px;
+}
+
+/* 카드 */
+.card{
+background:rgba(255,255,255,0.06);
+margin:10px;
+padding:14px;
+border-radius:20px;
+}
+
+/* 문제 영역 */
+#dropZone{
+height:180px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:26px;
+font-weight:bold;
+}
+
+/* PPE 버튼 */
+.btns{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+padding:10px;
+}
+
+.btn{
+background:rgba(255,255,255,0.08);
+padding:16px;
+border-radius:14px;
+font-size:16px;
+}
+
+/* 시작버튼 */
+.start{
+background:#2e7d32;
+margin:15px;
+padding:16px;
+border-radius:16px;
+font-size:18px;
+}
+
+/* 팝업 */
+.modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.7);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+.modalBox{
+background:#0c1833;
+padding:20px;
+border-radius:20px;
+width:85%;
+max-width:320px;
+}
+
+.modal img{
+width:180px;
+height:180px;
+object-fit:contain;
+margin:10px auto;
+display:block;
+}
+
+.small{
+font-size:14px;
+line-height:1.4;
+}
+
+.next{
+background:#355cff;
+padding:14px;
+margin-top:12px;
+border-radius:12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<div>🧹 환경관리 PPE</div>
+<div id="score">점수 0</div>
+</div>
+
+<div class="card">
+질병/상황을 보고 필요한 PPE 선택
+</div>
+
+<div id="dropZone">시작을 누르세요</div>
+
+<div class="start" onclick="startGame()">시작</div>
+
+<div class="btns">
+<div class="btn" onclick="select('mask')">마스크</div>
+<div class="btn" onclick="select('n95')">N95 마스크</div>
+<div class="btn" onclick="select('gown')">가운+장갑</div>
+<div class="btn" onclick="select('goggle')">고글</div>
+</div>
+
+<!-- 팝업 -->
+<div class="modal" id="modal">
+<div class="modalBox">
+<img id="resultImg" src="">
+<div id="resultText"></div>
+<div class="next" onclick="next()">다음</div>
+</div>
+</div>
+
+<script>
+let problems=[
+{q:"결핵",a:"n95"},
+{q:"인플루엔자 구토 청소",a:"mask"},
+{q:"혈액 오염 청소",a:"gown"},
+{q:"코로나 의심",a:"mask"},
+{q:"결핵병실 청소",a:"n95"},
+{q:"격리실 바닥청소",a:"gown"},
+{q:"일반병동 청소",a:"mask"},
+{q:"객혈 환자",a:"n95"},
+{q:"오물 처리",a:"gown"},
+{q:"독감 환자",a:"mask"}
+];
+
+let current=0;
+let score=0;
+
+function startGame(){
+current=0;
+score=0;
+next();
+}
+
+function next(){
+document.getElementById("modal").style.display="none";
+
+if(current>=problems.length){
+document.getElementById("dropZone").innerHTML="교육 완료 👍";
+return;
+}
+
+document.getElementById("dropZone").innerHTML=problems[current].q;
+}
+
+function select(choice){
+if(current>=problems.length)return;
+
+let correct=problems[current].a;
+let img=document.getElementById("resultImg");
+let text=document.getElementById("resultText");
+
+if(choice==correct){
+score++;
+img.src="https://cdn-icons-png.flaticon.com/512/845/845646.png";
+text.innerHTML="<b>정답!</b>";
+}else{
+img.src="https://cdn-icons-png.flaticon.com/512/463/463612.png";
+text.innerHTML="<b>오답</b><div class='small'>정답: "+correct+"</div>";
+}
+
+document.getElementById("score").innerText="점수 "+score;
+document.getElementById("modal").style.display="flex";
+
+current++;
+}
+</script>
+
+</body>
+</html>
