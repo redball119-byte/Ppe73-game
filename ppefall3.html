@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>환경관리 PPE 퀴즈 (기본 4종 · 질병명 낙하)</title>
+  <style>
+    :root{
+      --bg:#071022;
+      --card: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.14);
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.70);
+      --good:#22c55e;
+      --bad:#ef4444;
+      --shadow: 0 16px 34px rgba(0,0,0,.45);
+      --r: 22px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 30% 0%, rgba(120,170,255,.16), transparent 60%),
+                  radial-gradient(900px 700px at 70% 40%, rgba(80,255,170,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, "Pretendard", "Noto Sans KR", sans-serif;
+      -webkit-font-smoothing:antialiased;
+      overflow:hidden; /* 스크롤로 버튼이 가려지는 문제 방지 */
+    }
+
+    /* 전체 화면: 상단/중단/하단(보호구) 3영역을 정확히 나눔 */
+    .app{
+      height: 100vh;
+      padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+      display:grid;
+      grid-template-rows: auto auto 1fr auto; /* 헤더 / 안내 / 게임 / 보호구 */
+      gap: 10px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .row3{
+      display:grid;
+      grid-template-columns: 1.2fr .9fr .9fr;
+      gap:10px;
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 12px 12px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .title{
+      display:flex; gap:10px; align-items:flex-start;
+    }
+    .title .emoji{font-size:22px; line-height:1;}
+    .title h1{
+      margin:0;
+      font-size: clamp(16px, 2.8vw, 20px);
+      letter-spacing:-.2px;
+    }
+    .title .sub{
+      margin-top:4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      min-height: 64px;
+    }
+    .stat .label{font-size:12px;color:var(--muted)}
+    .stat .value{font-weight:800;font-size: clamp(18px, 4.2vw, 26px)}
+
+    .guide h2{
+      margin:0 0 6px 0;
+      font-size: clamp(16px, 3.3vw, 20px);
+      letter-spacing:-.2px;
+    }
+    .guide ol{
+      margin:0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    /* 게임 영역 */
+    .game{
+      display:grid;
+      grid-template-rows: auto 1fr; /* 상단 상태줄 / 낙하지역 */
+      gap:10px;
+      min-height: 0; /* grid 안에서 overflow 이슈 방지 */
+    }
+
+    .statusRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .pill{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--muted);
+      font-size: 13px;
+      white-space:nowrap;
+    }
+    .pill b{color:var(--text); font-size: 14px}
+
+    .dropZone{
+      position:relative;
+      border-radius: var(--r);
+      border: 2px dashed rgba(255,255,255,.18);
+      background: rgba(0,0,0,.10);
+      overflow:hidden; /* 낙하 텍스트가 밖으로 나가지 않게 */
+      min-height: 0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 12px;
+    }
+
+    /* 여기에서 텍스트가 “잘리던” 문제 해결:
+       - dropItem이 zone 안에서 충분히 커지고
+       - 줄바꿈되고
+       - 최대 폭 제한
+    */
+    .dropItem{
+      position:absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -40%; /* 위에서 시작 */
+      width: min(92%, 420px);
+      padding: 14px 14px;
+      text-align:center;
+      font-weight: 900;
+      font-size: clamp(18px, 5.2vw, 30px);
+      line-height: 1.15;
+      letter-spacing: -0.4px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.18);
+      text-shadow: 0 2px 8px rgba(0,0,0,.35);
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+      display:none;
+      z-index: 2;
+    }
+
+    .hintText{
+      color: rgba(234,240,255,.45);
+      font-size: 13px;
+      text-align:center;
+      padding: 0 10px;
+      z-index:1;
+    }
+
+    /* 결과 이미지 (정답/오답) */
+    .resultWrap{
+      position:absolute;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:10px;
+      background: rgba(0,0,0,.28);
+      z-index: 5;
+      padding: 14px;
+      text-align:center;
+    }
+    .resultWrap img{
+      width: min(54vw, 220px);
+      max-height: 22vh;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
+    }
+    .resultWrap .big{
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing:-.2px;
+    }
+    .resultWrap .small{
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+      max-width: 460px;
+    }
+
+    /* 보호구 영역: 항상 화면에 보이게 고정된 “마지막 행” */
+    .ppeBox{
+      display:grid;
+      grid-template-rows: auto auto;
+      gap: 10px;
+    }
+    .ppeHead{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 0 4px;
+    }
+    .ppeHead b{
+      color: var(--text);
+      font-size: 18px;
+      letter-spacing:-.2px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn{
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      border-radius: 22px;
+      padding: 14px 12px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 18px rgba(0,0,0,.20);
+      color: var(--text);
+      font-weight: 900;
+      text-align:center;
+      cursor:pointer;
+      min-height: 64px; /* 손가락 터치용 */
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap: 4px;
+    }
+    .btn .sub{
+      font-weight:700;
+      font-size: 12px;
+      color: rgba(234,240,255,.65);
+    }
+    .btn:active{transform: scale(.99)}
+    .btn.disabled{opacity:.45; pointer-events:none}
+
+    .foot{
+      text-align:center;
+      font-size: 11.5px;
+      color: rgba(234,240,255,.55);
+      margin-top: 2px;
+    }
+
+    /* 작은 폰에서 안내문이 너무 길어 보호구가 가려지는 것을 방지 */
+    @media (max-height: 740px){
+      .guide ol{display:none;} /* 높이가 낮으면 안내문 접기 */
+      .guide h2{margin-bottom:0;}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- 상단 -->
+    <div class="row3">
+      <div class="card">
+        <div class="title">
+          <div class="emoji">🧹</div>
+          <div>
+            <h1>환경관리 PPE 퀴즈</h1>
+            <div class="sub">기본 4종 · 질병명 낙하</div>
+          </div>
+        </div>
+      </div>
+      <div class="card stat">
+        <div class="label">문항</div>
+        <div class="value" id="qStat">1/10</div>
+      </div>
+      <div class="card stat">
+        <div class="label">점수</div>
+        <div class="value" id="scoreStat">0</div>
+      </div>
+    </div>
+
+    <!-- 안내 -->
+    <div class="card guide">
+      <h2>질병/상황을 보고 필요한 PPE 1개를 고르세요</h2>
+      <ol>
+        <li>질병명이 네모칸 위에서 아래로 <b>항상 5초</b> 동안 내려옵니다. (시간 초과 시 오답)</li>
+        <li>아래에서 PPE 1개를 누르면 채점 후 <b>자동으로 다음 문제</b>로 넘어갑니다. (시작 버튼 없음)</li>
+      </ol>
+    </div>
+
+    <!-- 게임 -->
+    <div class="card game">
+      <div class="statusRow">
+        <div class="pill">⏳ 제한시간: <b id="timeLeft">5.0s</b></div>
+        <div class="pill">상태: <b id="state">대기</b></div>
+      </div>
+
+      <div class="dropZone" id="zone">
+        <div class="hintText" id="hint">곧 문제가 떨어집니다…</div>
+
+        <div class="dropItem" id="dropItem">문제</div>
+
+        <div class="resultWrap" id="resultWrap">
+          <img id="resultImg" alt="result" src="assets/idle.png">
+          <div class="big" id="resultTitle">정답</div>
+          <div class="small" id="resultText">설명</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 보호구 -->
+    <div class="ppeBox">
+      <div class="ppeHead">
+        <div><b>보호구 선택 (4개)</b></div>
+        <div>한 문제당 1개만 선택</div>
+      </div>
+
+      <div class="grid" id="btnGrid">
+        <div class="btn" data-key="mask">
+          마스크
+          <div class="sub">기본(비말/분무)</div>
+        </div>
+        <div class="btn" data-key="n95">
+          N95 마스크
+          <div class="sub">공기(결핵 등)</div>
+        </div>
+        <div class="btn" data-key="gown_glove">
+          가운+장갑
+          <div class="sub">접촉(오염물 처리)</div>
+        </div>
+        <div class="btn" data-key="none">
+          PPE 불필요
+          <div class="sub">위험 낮음(교육용)</div>
+        </div>
+      </div>
+
+      <div class="foot">※ 교육용 단순화 버전(표준주의+추가주의 개념 기반)</div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 문제 데이터(예시) =====
+    // key: mask / n95 / gown_glove / none
+    const QUESTIONS = [
+      { text:"인플루엔자 환자 구역 청소", answer:"mask", explain:"비말/분무 위험 → 마스크" },
+      { text:"결핵 병실 청소", answer:"n95", explain:"공기주의 → N95" },
+      { text:"상처 배농/삼출물 주변 청소", answer:"gown_glove", explain:"체액 접촉 위험 → 가운+장갑" },
+      { text:"일반 복도 손잡이(오염 없음) 점검", answer:"none", explain:"교육용 단순화: 위험 낮음 → PPE 불필요" },
+      { text:"VRE/CRE 장기 재실 병실 퇴실 후 청소", answer:"gown_glove", explain:"접촉주의 환경오염 가능 → 가운+장갑" },
+      { text:"구토/설사(노로 의심) 구역 청소", answer:"mask", explain:"비말/분무 가능 → 마스크(교육용 단순화)" },
+      { text:"격리실 문고리·침상 난간 집중 청소", answer:"gown_glove", explain:"접촉오염 가능 → 가운+장갑" },
+      { text:"폐렴 환자 일반 병실 바닥 청소", answer:"mask", explain:"비말/분무 가능 → 마스크(교육용)" },
+      { text:"혈액이 묻은 구역 소독(스필)", answer:"gown_glove", explain:"오염물 처리 → 가운+장갑" },
+      { text:"검체 채취실 주변 일반 청소", answer:"mask", explain:"분무 가능 → 마스크(교육용)" },
+    ];
+
+    // ===== 설정 =====
+    const DROP_SECONDS = 5.0;          // “항상 5초”
+    const NEXT_DELAY_MS = 650;         // 결과 보여주는 시간
+    const RESULT_SHOW_MS = 900;        // 결과 오버레이 유지
+
+    // ===== DOM =====
+    const qStat = document.getElementById("qStat");
+    const scoreStat = document.getElementById("scoreStat");
+    const timeLeft = document.getElementById("timeLeft");
+    const stateEl = document.getElementById("state");
+    const hint = document.getElementById("hint");
+    const zone = document.getElementById("zone");
+    const dropItem = document.getElementById("dropItem");
+    const resultWrap = document.getElementById("resultWrap");
+    const resultImg = document.getElementById("resultImg");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultText = document.getElementById("resultText");
+    const buttons = Array.from(document.querySelectorAll(".btn"));
+
+    // ===== 상태 =====
+    let idx = 0;
+    let score = 0;
+    let running = false;
+    let answered = false;
+    let raf = null;
+    let startAt = 0;
+
+    function setButtonsDisabled(disabled){
+      buttons.forEach(b => b.classList.toggle("disabled", disabled));
+    }
+
+    function updateTop(){
+      qStat.textContent = `${Math.min(idx+1, QUESTIONS.length)}/${QUESTIONS.length}`;
+      scoreStat.textContent = `${score}`;
+    }
+
+    function showResult(ok, q, picked){
+      resultWrap.style.display = "flex";
+      resultImg.src = ok ? "assets/correct.png" : "assets/wrong.png";
+      resultTitle.textContent = ok ? "정답 ✅" : "오답 ❌";
+      resultTitle.style.color = ok ? "var(--good)" : "var(--bad)";
+      resultText.textContent = `문제: ${q.text} / 선택: ${picked ?? "없음(시간초과)"} / 정답: ${labelOf(q.answer)}\n설명: ${q.explain}`;
+    }
+
+    function hideResult(){
+      resultWrap.style.display = "none";
+      resultImg.src = "assets/idle.png";
+    }
+
+    function labelOf(key){
+      return ({
+        mask:"마스크",
+        n95:"N95 마스크",
+        gown_glove:"가운+장갑",
+        none:"PPE 불필요"
+      })[key] || key;
+    }
+
+    function stopAnim(){
+      if(raf) cancelAnimationFrame(raf);
+      raf = null;
+    }
+
+    function startQuestion(){
+      if(idx >= QUESTIONS.length){
+        stateEl.textContent = "완료";
+        hint.textContent = `끝! 점수: ${score}/${QUESTIONS.length}`;
+        dropItem.style.display = "none";
+        setButtonsDisabled(true);
+        return;
+      }
+
+      running = true;
+      answered = false;
+      setButtonsDisabled(false);
+      hideResult();
+
+      const q = QUESTIONS[idx];
+      updateTop();
+
+      stateEl.textContent = "진행";
+      hint.style.display = "none";
+      dropItem.textContent = q.text;
+      dropItem.style.display = "block";
+
+      // 낙하 시작/종료 위치(존 내부에서 확실히 보이게)
+      const zoneH = zone.clientHeight;
+      const startY = -0.30 * zoneH;   // 위쪽
+      const endY   =  0.58 * zoneH;   // 아래쪽(보호구 영역과 겹치지 않게)
+
+      startAt = performance.now();
+
+      function frame(now){
+        const t = (now - startAt) / (DROP_SECONDS * 1000);
+        const clamped = Math.min(Math.max(t, 0), 1);
+        const y = startY + (endY - startY) * clamped;
+
+        dropItem.style.top = `${y}px`;
+
+        const remain = Math.max(0, DROP_SECONDS - (now - startAt)/1000);
+        timeLeft.textContent = `${remain.toFixed(1)}s`;
+
+        if(clamped >= 1 && !answered){
+          // 시간초과 처리
+          answered = true;
+          setButtonsDisabled(true);
+          stateEl.textContent = "오답";
+          showResult(false, q, null);
+
+          setTimeout(() => {
+            hideResult();
+            idx++;
+            startQuestion(); // 자동 다음문제
+          }, RESULT_SHOW_MS);
+          return;
+        }
+
+        if(!answered) raf = requestAnimationFrame(frame);
+      }
+
+      stopAnim();
+      raf = requestAnimationFrame(frame);
+    }
+
+    function answer(pickedKey){
+      if(!running || answered) return;
+
+      const q = QUESTIONS[idx];
+      answered = true;
+      setButtonsDisabled(true);
+      stopAnim();
+
+      const ok = (pickedKey === q.answer);
+      if(ok) score++;
+
+      stateEl.textContent = ok ? "정답" : "오답";
+      updateTop();
+
+      showResult(ok, q, labelOf(pickedKey));
+
+      setTimeout(() => {
+        hideResult();
+        idx++;
+        startQuestion(); // 자동 다음문제
+      }, RESULT_SHOW_MS);
+    }
+
+    // 버튼 클릭
+    buttons.forEach(btn=>{
+      btn.addEventListener("click", ()=> answer(btn.dataset.key));
+      btn.addEventListener("touchend", (e)=>{ e.preventDefault(); answer(btn.dataset.key); }, {passive:false});
+    });
+
+    // 화면 회전/리사이즈 시도 “문제가 잘려 보이는 현상” 방지용 재시작
+    let resizeTimer = null;
+    window.addEventListener("resize", ()=>{
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(()=>{
+        if(!answered) startQuestion();
+      }, 120);
+    });
+
+    // 자동 시작
+    updateTop();
+    stateEl.textContent = "대기";
+    setButtonsDisabled(true);
+
+    // 첫 문제 자동 시작 (페이지 뜨고 0.3초 후)
+    setTimeout(()=>{
+      setButtonsDisabled(false);
+      startQuestion();
+    }, 300);
+  </script>
+</body>
+</html>
