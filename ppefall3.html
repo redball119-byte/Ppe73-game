@@ -1,0 +1,191 @@
+<style>
+/* ==== FIX: 모바일 화면 높이/잘림 방지 ==== */
+html, body { height: 100%; }
+body{
+  margin:0;
+  min-height: 100dvh;
+  overflow-x:hidden;
+}
+
+/* 전체 레이아웃이 화면 안에서 ‘자동으로’ 맞춰지게 */
+.app{
+  min-height: 100dvh;
+  display:flex;
+  flex-direction:column;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  box-sizing:border-box;
+}
+
+/* ==== FIX: 상단을 "가로 1줄"로 낮게 ==== */
+.topbar{
+  display:grid;
+  grid-template-columns: 1.2fr 0.7fr 0.7fr;
+  gap: 10px;
+  align-items: stretch;
+  margin-bottom: 10px;
+}
+
+/* 상단 카드(높이 낮추기) */
+.topcard{
+  border-radius: 20px;
+  padding: 10px 12px;
+  min-height: 74px;           /* ← 기존보다 확 낮음 */
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+/* 타이틀 쪽 */
+.top-left{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.brand-title{
+  font-weight: 800;
+  line-height: 1.05;
+  font-size: 18px;            /* ← 글씨 줄임 */
+}
+.brand-sub{
+  font-size: 12px;
+  opacity: .8;
+  margin-top: 3px;
+}
+
+/* 재시작 버튼 작게 */
+.btn-restart{
+  border-radius: 14px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 문항/점수 타일 글씨 줄이기 */
+.metric-big{
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+.metric-label{
+  font-size: 12px;
+  opacity: .85;
+}
+
+/* ==== FIX: 본문은 남은 공간을 쓰고, 보호구가 절대 잘리지 않게 ==== */
+.main{
+  flex: 1;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  min-height: 0;             /* 중요: flex 내부 overflow 계산 */
+}
+
+/* 안내 박스: 높이 줄이기 */
+.guide{
+  border-radius: 22px;
+  padding: 12px 14px;
+}
+.guide h2{
+  margin:0 0 6px 0;
+  font-size: 18px;           /* ← 조금 줄임 */
+}
+.guide p{
+  margin:0;
+  font-size: 13px;
+  opacity: .85;
+  line-height: 1.35;
+}
+
+/* 시간/상태 줄도 얇게 */
+.statusrow{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.statuspill{
+  border-radius: 18px;
+  padding: 10px 12px;
+  min-height: 46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.statuspill b{ font-size: 18px; }
+
+/* 문제 박스: 너무 작지 않게 + 남는 공간은 여기서 확장 */
+.dropbox{
+  border-radius: 26px;
+  padding: 12px;
+  flex: 1;
+  min-height: 170px;          /* 중앙 네모칸 최소 높이 확보 */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* 문제(질병/상황) 글씨: 화면에 맞춰 자동으로 */
+.falling{
+  font-size: clamp(16px, 3.8vw, 22px);
+  font-weight: 900;
+  padding: 14px 16px;
+  border-radius: 18px;
+  max-width: 92%;
+  text-align:center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 보호구 영역: 2x2가 항상 보이도록 */
+.ppe-wrap{
+  border-radius: 26px;
+  padding: 12px;
+}
+.ppe-head{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  margin-bottom: 10px;
+}
+.ppe-head h3{
+  margin:0;
+  font-size: 18px;
+}
+.ppe-head span{
+  font-size: 12px;
+  opacity: .8;
+}
+
+.ppe-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ppe-btn{
+  border-radius: 22px;
+  padding: 14px 12px;
+  min-height: 80px;           /* 너무 커서 답답했던 것 완화 */
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap: 6px;
+}
+.ppe-btn .t{
+  font-size: 16px;
+  font-weight: 900;
+}
+.ppe-btn .s{
+  font-size: 12px;
+  opacity: .75;
+}
+
+/* 작은 화면(가로폭 좁을 때) 안전장치 */
+@media (max-width: 380px){
+  .brand-title{ font-size: 16px; }
+  .metric-big{ font-size: 20px; }
+  .ppe-btn{ min-height: 74px; }
+}
+</style>
