@@ -416,6 +416,7 @@
       if(qIndex >= QUESTIONS.length){
         // 종료 화면은 간단히: 마지막 결과를 낙하 텍스트로 표시
         falling.textContent = `끝! 점수: ${score}/${QUESTIONS.length}`;
+        if (window.countComplete) window.countComplete();
         resetFallingPosition();
         falling.style.top = `42%`;
         falling.style.transform = "translate(-50%, -50%)";
