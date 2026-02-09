@@ -513,5 +513,29 @@
     // 로드 시 자동 시작
     startGame();
   </script>
-</body>
+<!-- Firebase 참여자 카운트 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDuULgRdE8YOweC-JwCUZYFKvsw72y0_W4",
+    authDomain: "ppe73-b2242.firebaseapp.com",
+    databaseURL: "https://ppe73-b2242-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "ppe73-b2242",
+    storageBucket: "ppe73-b2242.firebasestorage.app",
+    messagingSenderId: "198786455915",
+    appId: "1:198786455915:web:e065b1f4f2505660c4542e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const key = "ppe73_counted";
+  if (!localStorage.getItem(key)) {
+    localStorage.setItem(key, "1");
+    const counterRef = ref(db, "stats/visits");
+    runTransaction(counterRef, (current) => (current || 0) + 1);
+  }
+</script></body>
 </html>
