@@ -443,7 +443,7 @@
 
       const correct = QUESTIONS[qIndex].answer;
       const isCorrect = (choice === correct);
-
+if (window.recordAnswer) window.recordAnswer(qIndex, isCorrect);
       if(isCorrect) score += 1;
 
       showOverlay(isCorrect ? "correct" : "wrong");
@@ -514,30 +514,48 @@
     // 로드 시 자동 시작
     startGame();
   </script>
-<!-- Firebase 참여자 카운트 -->
+<!-- Firebase 참여자/완료/문항별 정답 기록 -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDuULgRdE8YOweC-JwCUZYFKvsw72y0_W4",
-    authDomain: "ppe73-b2242.firebaseapp.com",
-    databaseURL: "https://ppe73-b2242-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "ppe73-b2242",
-    storageBucket: "ppe73-b2242.firebasestorage.app",
-    messagingSenderId: "198786455915",
-    appId: "1:198786455915:web:e065b1f4f2505660c4542e"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyDuULgRdE8YOweC-JwCUZYFKvsw72y0_W4",
+  authDomain: "ppe73-b2242.firebaseapp.com",
+  databaseURL: "https://ppe73-b2242-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ppe73-b2242",
+  storageBucket: "ppe73-b2242.firebasestorage.app",
+  messagingSenderId: "198786455915",
+  appId: "1:198786455915:web:e065b1f4f2505660c4542e"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-  const key = "ppe73_counted";
-  if (!localStorage.getItem(key)) {
-    localStorage.setItem(key, "1");
-    const counterRef = ref(db, "stats/visits");
-    runTransaction(counterRef, (current) => (current || 0) + 1);
+// 1) 접속자(기기당 1회)
+const visitKey = "ppe73_visit";
+if (!localStorage.getItem(visitKey)) {
+  localStorage.setItem(visitKey, "1");
+  runTransaction(ref(db, "stats/visits"), v => (v || 0) + 1);
+}
+
+// 2) 완료자(기기당 1회)
+window.countComplete = function(){
+  const doneKey = "ppe73_done";
+  if (localStorage.getItem(doneKey)) return;
+  localStorage.setItem(doneKey, "1");
+  runTransaction(ref(db, "stats/completed"), v => (v || 0) + 1);
+};
+
+// 3) 문항별 정답률 기록
+window.recordAnswer = function(qIndex, isCorrect){
+  // total++
+  runTransaction(ref(db, `stats/questions/q${qIndex+1}/total`), v => (v || 0) + 1);
+  // correct++
+  if (isCorrect) {
+    runTransaction(ref(db, `stats/questions/q${qIndex+1}/correct`), v => (v || 0) + 1);
   }
+};
 </script>
 </body>
 </html>
