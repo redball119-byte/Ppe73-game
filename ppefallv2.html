@@ -29,7 +29,6 @@
       overflow:hidden;
     }
 
-    /* 전체 앱: 상단+플레이존+하단버튼 */
     .app{
       min-height: 100dvh;
       padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
@@ -38,7 +37,6 @@
       gap:12px;
     }
 
-    /* ====== 상단 바(컴팩트) ====== */
     .topbar{
       display:grid;
       grid-template-columns: 1fr 110px;
@@ -86,7 +84,6 @@
     .statLabel{ color:var(--muted); font-size:12px; }
     .statValue{ font-weight:900; font-size:18px; letter-spacing:-.2px; }
 
-    /* 재시작 버튼(작게) */
     .restartBtn{
       margin-top:8px;
       width:100%;
@@ -103,7 +100,6 @@
     }
     .restartBtn:active{ transform: translateY(1px); }
 
-    /* ====== 플레이 영역 ====== */
     .playZone{
       flex:1;
       background: rgba(255,255,255,.05);
@@ -116,7 +112,6 @@
       min-height: 260px;
     }
 
-    /* 낙하하는 "질병명 카드" */
     .falling{
       position:absolute;
       left:50%;
@@ -138,7 +133,6 @@
       backdrop-filter: blur(10px);
     }
 
-    /* 상단에 아주 얇은 진행선 느낌 */
     .laneTop{
       position:absolute;
       left:16px;
@@ -157,7 +151,6 @@
       opacity:.25;
     }
 
-    /* 정답/오답 이미지 오버레이 */
     .overlay{
       position:absolute;
       inset:0;
@@ -175,7 +168,6 @@
       filter: drop-shadow(0 18px 28px rgba(0,0,0,.5));
     }
 
-    /* ====== 하단 선택지(고정 느낌) ====== */
     .choicesWrap{
       background: var(--card);
       border: 1px solid var(--stroke);
@@ -220,7 +212,7 @@
       color: var(--text);
       box-shadow: 0 10px 22px rgba(0,0,0,.25);
       cursor:pointer;
-      min-height: 76px; /* 모바일 한 화면에 들어오게 */
+      min-height: 76px;
       text-align:center;
     }
     .btn:active{ transform: translateY(1px); }
@@ -248,7 +240,6 @@
       font-size: 12px;
     }
 
-    /* ====== 모바일 더 빡세게 줄이기(작은 화면) ====== */
     @media (max-width: 380px){
       .titleLine{ font-size:16px; }
       .falling{ font-size:20px; padding:14px 16px; }
@@ -262,8 +253,6 @@
 
 <body>
   <div class="app">
-
-    <!-- 상단 -->
     <div class="topbar">
       <div class="titleCard">
         <p class="titleLine">🧹 환경관리담당자 보호구 교육</p>
@@ -289,18 +278,14 @@
       </div>
     </div>
 
-    <!-- 플레이 영역 -->
     <div class="playZone" id="playZone" aria-label="문제 낙하 영역">
       <div class="laneTop"><div class="laneDots"></div></div>
-
       <div class="falling" id="falling">로딩…</div>
-
       <div class="overlay" id="overlay">
         <img id="overlayImg" src="assets/idle.png" alt="정답/오답 표시" />
       </div>
     </div>
 
-    <!-- 하단 선택지 -->
     <div class="choicesWrap">
       <div class="choicesHead">
         <p class="choicesTitle">보호구 선택 (4개)</p>
@@ -334,7 +319,6 @@
   </div>
 
   <script>
-    // ====== 설정 ======
     const QUESTIONS = [
       { text: "일반 복도 청소", answer: "NONE" },
       { text: "혈액/체액 오염물 처리(스필)", answer: "GOWN_GLOVES" },
@@ -343,23 +327,19 @@
       { text: "결핵 의심/확진 환자 구역 청소", answer: "N95" },
     ];
 
-    const FALL_DURATION_SEC = 5.0;          // 한 문제당 낙하 제한시간
-    const FEEDBACK_MS = 550;                // 정답/오답 이미지 노출 시간
+    const FALL_DURATION_SEC = 5.0;
+    const FEEDBACK_MS = 550;
     const IMG_CORRECT = "assets/correct.png";
     const IMG_WRONG   = "assets/wrong.png";
     const IMG_IDLE    = "assets/idle.png";
 
-    // ====== 상태 ======
     let qIndex = 0;
     let score = 0;
-
     let running = false;
     let answered = false;
-
-    let startTime = 0;      // ms
+    let startTime = 0;
     let rafId = null;
 
-    // ====== DOM ======
     const playZone = document.getElementById("playZone");
     const falling = document.getElementById("falling");
     const overlay = document.getElementById("overlay");
@@ -372,7 +352,6 @@
     const restartBtn = document.getElementById("restartBtn");
     const buttons = Array.from(document.querySelectorAll(".btn"));
 
-    // ====== 유틸 ======
     function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
     function showOverlay(type){
@@ -391,7 +370,6 @@
 
     function setFallingText(){
       falling.textContent = QUESTIONS[qIndex].text;
-      // 길면 자동 줄임(ellipsis) - 이미 CSS로 처리됨
     }
 
     function resetFallingPosition(){
@@ -402,6 +380,10 @@
       if(answered) return;
       answered = true;
       running = false;
+
+      // 시간초과도 문항 시도는 기록(오답 처리)
+      if (window.recordAnswer) window.recordAnswer(qIndex, false);
+
       showOverlay("wrong");
 
       window.setTimeout(() => {
@@ -414,9 +396,9 @@
       qIndex += 1;
 
       if(qIndex >= QUESTIONS.length){
-        // 종료 화면은 간단히: 마지막 결과를 낙하 텍스트로 표시
         falling.textContent = `끝! 점수: ${score}/${QUESTIONS.length}`;
         if (window.countComplete) window.countComplete();
+
         resetFallingPosition();
         falling.style.top = `42%`;
         falling.style.transform = "translate(-50%, -50%)";
@@ -425,7 +407,6 @@
         return;
       }
 
-      // 다음 문제 시작
       answered = false;
       running = true;
       falling.style.transform = "translateX(-50%)";
@@ -435,6 +416,7 @@
       loop();
     }
 
+    // ✅ 정리된 단 하나의 handleChoice
     function handleChoice(choice){
       if(!running || answered) return;
 
@@ -443,7 +425,9 @@
 
       const correct = QUESTIONS[qIndex].answer;
       const isCorrect = (choice === correct);
-if (window.recordAnswer) window.recordAnswer(qIndex, isCorrect);
+
+      if (window.recordAnswer) window.recordAnswer(qIndex, isCorrect);
+
       if(isCorrect) score += 1;
 
       showOverlay(isCorrect ? "correct" : "wrong");
@@ -454,7 +438,6 @@ if (window.recordAnswer) window.recordAnswer(qIndex, isCorrect);
       }, FEEDBACK_MS);
     }
 
-    // ====== 낙하 애니메이션 ======
     function loop(){
       cancelAnimationFrame(rafId);
 
@@ -462,10 +445,9 @@ if (window.recordAnswer) window.recordAnswer(qIndex, isCorrect);
       const elapsed = (now - startTime) / 1000;
       const t = clamp(elapsed / FALL_DURATION_SEC, 0, 1);
 
-      // 플레이존 높이에 맞춰 이동
       const zoneH = playZone.clientHeight;
       const startY = -120;
-      const endY = zoneH - 130;  // 하단에 닿기 직전
+      const endY = zoneH - 130;
       const y = startY + (endY - startY) * t;
       falling.style.top = `${y}px`;
 
@@ -482,7 +464,6 @@ if (window.recordAnswer) window.recordAnswer(qIndex, isCorrect);
       }
     }
 
-    // ====== 시작/재시작 ======
     function startGame(){
       qIndex = 0;
       score = 0;
@@ -511,51 +492,49 @@ if (window.recordAnswer) window.recordAnswer(qIndex, isCorrect);
       });
     });
 
-    // 로드 시 자동 시작
     startGame();
   </script>
-<!-- Firebase 참여자/완료/문항별 정답 기록 -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDuULgRdE8YOweC-JwCUZYFKvsw72y0_W4",
-  authDomain: "ppe73-b2242.firebaseapp.com",
-  databaseURL: "https://ppe73-b2242-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ppe73-b2242",
-  storageBucket: "ppe73-b2242.firebasestorage.app",
-  messagingSenderId: "198786455915",
-  appId: "1:198786455915:web:e065b1f4f2505660c4542e"
-};
+  <!-- Firebase 참여자/완료/문항별 정답 기록 -->
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyDuULgRdE8YOweC-JwCUZYFKvsw72y0_W4",
+    authDomain: "ppe73-b2242.firebaseapp.com",
+    databaseURL: "https://ppe73-b2242-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "ppe73-b2242",
+    storageBucket: "ppe73-b2242.firebasestorage.app",
+    messagingSenderId: "198786455915",
+    appId: "1:198786455915:web:e065b1f4f2505660c4542e"
+  };
 
-// 1) 접속자(기기당 1회)
-const visitKey = "ppe73_visit";
-if (!localStorage.getItem(visitKey)) {
-  localStorage.setItem(visitKey, "1");
-  runTransaction(ref(db, "stats/visits"), v => (v || 0) + 1);
-}
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-// 2) 완료자(기기당 1회)
-window.countComplete = function(){
-  const doneKey = "ppe73_done";
-  if (localStorage.getItem(doneKey)) return;
-  localStorage.setItem(doneKey, "1");
-  runTransaction(ref(db, "stats/completed"), v => (v || 0) + 1);
-};
-
-// 3) 문항별 정답률 기록
-window.recordAnswer = function(qIndex, isCorrect){
-  // total++
-  runTransaction(ref(db, `stats/questions/q${qIndex+1}/total`), v => (v || 0) + 1);
-  // correct++
-  if (isCorrect) {
-    runTransaction(ref(db, `stats/questions/q${qIndex+1}/correct`), v => (v || 0) + 1);
+  // 1) 접속자(기기당 1회)
+  const visitKey = "ppe73_visit";
+  if (!localStorage.getItem(visitKey)) {
+    localStorage.setItem(visitKey, "1");
+    runTransaction(ref(db, "stats/visits"), v => (v || 0) + 1);
   }
-};
-</script>
+
+  // 2) 완료자(기기당 1회)
+  window.countComplete = function(){
+    const doneKey = "ppe73_done";
+    if (localStorage.getItem(doneKey)) return;
+    localStorage.setItem(doneKey, "1");
+    runTransaction(ref(db, "stats/completed"), v => (v || 0) + 1);
+  };
+
+  // 3) 문항별 정답률 기록
+  window.recordAnswer = function(qIndex, isCorrect){
+    runTransaction(ref(db, `stats/questions/q${qIndex+1}/total`), v => (v || 0) + 1);
+    if (isCorrect) {
+      runTransaction(ref(db, `stats/questions/q${qIndex+1}/correct`), v => (v || 0) + 1);
+    }
+  };
+  </script>
 </body>
 </html>
