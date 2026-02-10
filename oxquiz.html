@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>환경관리 OX 퀴즈</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.70);
+      --ok:#37d67a; --bad:#ff4d4d;
+      --r:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif}
+    .wrap{min-height:100dvh;display:flex;flex-direction:column;gap:12px;padding:14px}
+    .top{
+      background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+      padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px
+    }
+    .title{font-size:18px;font-weight:800}
+    .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .hud{display:flex;gap:10px;align-items:center}
+    .pill{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:999px;padding:8px 10px;font-size:12px;color:var(--muted)}
+    .pill b{color:var(--text)}
+    .stage{
+      position:relative;flex:1;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border);border-radius:var(--r);
+      overflow:hidden;min-height:420px;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .question-card{
+      position:absolute;left:50%;transform:translateX(-50%);
+      width:min(92vw, 540px);
+      background:rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:16px;
+      padding:18px 16px;
+      text-align:center;
+      font-size:22px;
+      font-weight:800;
+      line-height:1.25;
+      box-shadow:0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(6px);
+    }
+    .img-pop{
+      position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.35);
+    }
+    .img-pop img{
+      width:min(82vw, 520px);
+      max-height:70dvh;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 18px 55px rgba(0,0,0,.55);
+    }
+    .bottom{
+      background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+      padding:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;
+    }
+    .btnrow{display:flex;gap:10px;flex:1}
+    .btn{
+      flex:1;
+      padding:16px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+      color:var(--text);
+      font-size:20px;font-weight:900;
+      touch-action:manipulation;
+    }
+    .btn.ok{outline:2px solid rgba(55,214,122,.35)}
+    .btn.bad{outline:2px solid rgba(255,77,77,.35)}
+    .btn:disabled{opacity:.45}
+    .restart{
+      padding:12px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);color:var(--muted);font-weight:800
+    }
+
+    /* nickname modal */
+    .modal{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      display:flex;align-items:center;justify-content:center;padding:16px;
+    }
+    .modal .box{
+      width:min(92vw,460px);
+      background:rgba(15,20,35,.96);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 18px 60px rgba(0,0,0,.6);
+    }
+    .modal h2{margin:0 0 8px;font-size:18px}
+    .modal p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.4}
+    .modal input{
+      width:100%;padding:14px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);color:var(--text);font-size:16px
+    }
+    .modal .go{
+      margin-top:12px;width:100%;
+      padding:14px 12px;border-radius:12px;border:0;
+      background:var(--ok);color:#062012;font-weight:900;font-size:16px
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">환경관리 담당자 OX 퀴즈</div>
+        <div class="sub">손위생 3문제 · 청소 기본원칙 2문제 (제한시간 4초)</div>
+      </div>
+      <div class="hud">
+        <div class="pill">문항 <b id="qIdx">0</b>/5</div>
+        <div class="pill">점수 <b id="score">0</b></div>
+        <div class="pill">남은시간 <b id="time">4.0</b>s</div>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="question-card" id="qCard" style="top:20px; display:none;"></div>
+
+      <div class="img-pop" id="imgPop">
+        <img id="imgResult" alt="result" />
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="btnrow">
+        <button class="btn ok" id="btnO">O</button>
+        <button class="btn bad" id="btnX">X</button>
+      </div>
+      <button class="restart" id="btnRestart">재시작</button>
+    </div>
+  </div>
+
+  <!-- nickname modal -->
+  <div class="modal" id="modal">
+    <div class="box">
+      <h2>닉네임을 입력해 주세요</h2>
+      <p>교육 참여 기록(닉네임·점수·시간) 저장용입니다. (개인정보 최소화)</p>
+      <input id="nickname" maxlength="20" placeholder="예: 미희 / 환경팀미희" />
+      <button class="go" id="btnStart">시작하기</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // ===== Firebase (CDN 모듈) =====
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getDatabase, ref, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDuULgRdE8YOweC-JwCUZYFKvsw72y0_W4",
+      authDomain: "ppe73-b2242.firebaseapp.com",
+      databaseURL: "https://ppe73-b2242-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "ppe73-b2242",
+      storageBucket: "ppe73-b2242.firebasestorage.app",
+      messagingSenderId: "198786455915",
+      appId: "1:198786455915:web:c65380d56d618299c4542e",
+      measurementId: "G-T4CQ92JM6T"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // ===== 퀴즈 데이터 (5문제) =====
+    const QUESTIONS = [
+      { text: "장갑을 착용했으면 손위생은 하지 않아도 된다.", answer: "X", explain: "장갑 착용 전·후 손위생이 필요합니다." },
+      { text: "쓰레기통을 비운 후에는 손위생을 해야 한다.", answer: "O", explain: "쓰레기 접촉 후 손위생을 시행합니다." },
+      { text: "다른 병실로 이동할 때 손위생이 필요하다.", answer: "O", explain: "구역(병실) 변경 시 손위생을 합니다." },
+      { text: "화장실을 먼저 청소하고 병실을 청소한다.", answer: "X", explain: "병실 → 화장실(오염 많은 곳은 마지막) 순서가 원칙입니다." },
+      { text: "청소는 깨끗한 곳에서 오염된 곳 순서로 진행한다.", answer: "O", explain: "깨끗한 곳 → 오염된 곳 순서로 진행합니다." }
+    ];
+
+    // ===== UI 요소 =====
+    const qIdxEl = document.getElementById("qIdx");
+    const scoreEl = document.getElementById("score");
+    const timeEl = document.getElementById("time");
+    const qCard = document.getElementById("qCard");
+    const imgPop = document.getElementById("imgPop");
+    const imgResult = document.getElementById("imgResult");
+    const btnO = document.getElementById("btnO");
+    const btnX = document.getElementById("btnX");
+    const btnRestart = document.getElementById("btnRestart");
+
+    const modal = document.getElementById("modal");
+    const nicknameInput = document.getElementById("nickname");
+    const btnStart = document.getElementById("btnStart");
+
+    // ===== 이미지 경로 =====
+    const IMG_IDLE = "assets/idle.png";
+    const IMG_OK   = "assets/correct.png";
+    const IMG_BAD  = "assets/wrong.png";
+
+    // ===== 게임 상태 =====
+    let nickname = "";
+    let qIndex = 0;
+    let score = 0;
+    let locked = false;
+    let tickTimer = null;
+    let animTimer = null;
+    let startMs = 0;
+    let answersLog = []; // {q, pick, correct, rtMs}
+
+    const LIMIT_MS = 4000;
+
+    function setButtonsEnabled(on){
+      btnO.disabled = !on;
+      btnX.disabled = !on;
+    }
+
+    function showResultImage(ok){
+      imgResult.src = ok ? IMG_OK : IMG_BAD;
+      imgPop.style.display = "flex";
+    }
+
+    function hideResultImage(){
+      imgPop.style.display = "none";
+      imgResult.src = "";
+    }
+
+    function resetTimers(){
+      if(tickTimer){ clearInterval(tickTimer); tickTimer = null; }
+      if(animTimer){ clearInterval(animTimer); animTimer = null; }
+    }
+
+    function resetGame(){
+      resetTimers();
+      qIndex = 0;
+      score = 0;
+      locked = false;
+      answersLog = [];
+      qIdxEl.textContent = "0";
+      scoreEl.textContent = "0";
+      timeEl.textContent = "4.0";
+      qCard.style.display = "none";
+      hideResultImage();
+      setButtonsEnabled(false);
+    }
+
+    function startQuestion(){
+      locked = false;
+      hideResultImage();
+      setButtonsEnabled(true);
+
+      const q = QUESTIONS[qIndex];
+      qIdxEl.textContent = String(qIndex + 1);
+      qCard.textContent = q.text;
+      qCard.style.display = "block";
+
+      // 내려오는 애니메이션: 위(20px) -> 아래(75%)
+      const startTop = 20;
+      const endTop = Math.floor(window.innerHeight * 0.60);
+      const duration = LIMIT_MS;
+
+      let t0 = performance.now();
+      startMs = performance.now();
+
+      function step(){
+        const now = performance.now();
+        const p = Math.min(1, (now - t0) / duration);
+        const eased = 1 - Math.pow(1 - p, 3); // easeOut
+        const top = startTop + (endTop - startTop) * eased;
+        qCard.style.top = `${top}px`;
+        if(p >= 1){
+          // 시간 초과 처리
+          if(!locked) handlePick("TIMEOUT");
+        }
+      }
+
+      animTimer = setInterval(step, 16);
+
+      // 남은시간 표시
+      tickTimer = setInterval(() => {
+        const elapsed = performance.now() - startMs;
+        const left = Math.max(0, LIMIT_MS - elapsed);
+        timeEl.textContent = (left/1000).toFixed(1);
+      }, 100);
+    }
+
+    function nextQuestion(){
+      qIndex++;
+      if(qIndex >= QUESTIONS.length){
+        finishGame();
+      } else {
+        startQuestion();
+      }
+    }
+
+    function handlePick(pick){
+      if(locked) return;
+      locked = true;
+      setButtonsEnabled(false);
+      resetTimers();
+
+      const q = QUESTIONS[qIndex];
+      const rtMs = Math.round(performance.now() - startMs);
+
+      let isCorrect = false;
+      if(pick === "TIMEOUT"){
+        isCorrect = false;
+      } else {
+        isCorrect = (pick === q.answer);
+      }
+
+      answersLog.push({
+        index: qIndex + 1,
+        question: q.text,
+        correctAnswer: q.answer,
+        pick,
+        correct: isCorrect,
+        rtMs
+      });
+
+      if(isCorrect){
+        score++;
+        scoreEl.textContent = String(score);
+        showResultImage(true);
+      } else {
+        showResultImage(false);
+        // 틀렸을 때: 짧게 설명을 카드에 잠깐 표시
+        qCard.textContent = `❌ ${q.explain}`;
+      }
+
+      // 1.2초 후 다음 문제
+      setTimeout(() => {
+        hideResultImage();
+        qCard.style.top = "20px";
+        nextQuestion();
+      }, 1200);
+    }
+
+    async function finishGame(){
+      qCard.style.display = "block";
+      qCard.style.top = "30%";
+      qCard.textContent = `완료! 점수: ${score}/5`;
+
+      setButtonsEnabled(false);
+      timeEl.textContent = "0.0";
+
+      // Firebase 저장
+      try{
+        const sessionRef = push(ref(db, "ox_quiz_sessions"));
+        await set(sessionRef, {
+          nickname,
+          score,
+          total: QUESTIONS.length,
+          answers: answersLog,
+          createdAt: serverTimestamp(),
+          userAgent: navigator.userAgent
+        });
+        // 저장 완료 안내(조용히)
+        setTimeout(() => {
+          qCard.textContent = `완료! 점수: ${score}/5\n(기록 저장됨)`;
+        }, 200);
+      } catch(err){
+        console.error(err);
+        setTimeout(() => {
+          qCard.textContent = `완료! 점수: ${score}/5\n(저장 실패: 네트워크/규칙 확인)`;
+        }, 200);
+      }
+    }
+
+    // 버튼 이벤트
+    btnO.addEventListener("click", () => handlePick("O"));
+    btnX.addEventListener("click", () => handlePick("X"));
+    btnRestart.addEventListener("click", () => {
+      resetGame();
+      // 닉네임 유지하고 바로 재시작
+      startQuestion();
+    });
+
+    // 시작(닉네임)
+    btnStart.addEventListener("click", () => {
+      const v = nicknameInput.value.trim();
+      if(!v){
+        nicknameInput.focus();
+        nicknameInput.placeholder = "닉네임을 입력해 주세요";
+        return;
+      }
+      nickname = v;
+      modal.style.display = "none";
+      resetGame();
+      startQuestion();
+    });
+
+    // Enter로 시작
+    nicknameInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter") btnStart.click();
+    });
+
+    // 초기 상태
+    resetGame();
+    imgResult.src = IMG_IDLE;
+  </script>
+</body>
+</html>
