@@ -109,12 +109,12 @@
     <div class="top">
       <div>
         <div class="title">환경관리 담당자 OX 퀴즈</div>
-        <div class="sub">손위생 3문제 · 청소 기본원칙 2문제 (제한시간 4초)</div>
+        <div class="sub">손위생 3문제 · 청소 기본원칙 2문제 (제한시간 10초)</div>
       </div>
       <div class="hud">
         <div class="pill">문항 <b id="qIdx">0</b>/5</div>
         <div class="pill">점수 <b id="score">0</b></div>
-        <div class="pill">남은시간 <b id="time">5.0</b>s</div>
+        <div class="pill">남은시간 <b id="time">10.0</b>s</div>
       </div>
     </div>
 
@@ -203,7 +203,7 @@
     let startMs = 0;
     let answersLog = []; // {q, pick, correct, rtMs}
 
-    const LIMIT_MS = 5000;
+    const LIMIT_MS = 10000;
 
     function setButtonsEnabled(on){
       btnO.disabled = !on;
@@ -233,7 +233,7 @@
       answersLog = [];
       qIdxEl.textContent = "0";
       scoreEl.textContent = "0";
-      timeEl.textContent = "5.0";
+      timeEl.textContent = "10.0";
       qCard.style.display = "none";
       hideResultImage();
       setButtonsEnabled(false);
